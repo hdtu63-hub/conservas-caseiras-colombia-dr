@@ -22,7 +22,10 @@ interface Stats {
     checkoutViewsCompleta: number;
     receiptsUploaded: number;
     paymentsApproved: number;
+    paymentsApprovedEsencial: number;
+    paymentsApprovedCompleta: number;
     paymentsRejected: number;
+    totalRevenueToday: number;
   };
   recentEvents: Array<{
     id: string;
