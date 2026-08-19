@@ -47,3 +47,4 @@ yarn-error.log*
 
 # analytics data
 /data/
+env-para-vercel.env

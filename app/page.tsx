@@ -1,3 +1,4 @@
+"use client";
 import Tracker from "./tracker";
 
 const benefits = [
@@ -115,5 +116,15 @@ export default function Home() {
 }
 
 function Offer({ edition, title, price, oldPrice, priceNote, href, buttonLabel, features, unavailable = [], bonuses = [], featured = false }: { edition: string; title: string; price: string; oldPrice: string; priceNote?: string; href: string; buttonLabel: string; features: string[]; unavailable?: string[]; bonuses?: string[]; featured?: boolean }) {
-  return <article className={`offer ${featured ? "featured" : ""}`}>{featured && <b className="popular">Más popular</b>}<span className="eyebrow">{edition}</span><h3>{title}</h3><ul>{features.map(item => <li key={item}><i>{featured ? "✦" : "—"}</i>{item}</li>)}</ul>{(bonuses.length > 0 || unavailable.length > 0) && <div className="offer-bonuses"><b>✦ {featured ? "4 bonos incluidos" : "Bonos gratis"}</b>{bonuses.map(item => <span key={item}>✦ {item}</span>)}{unavailable.map(item => <del key={item}>× {item}</del>)}{featured && <strong>✦ Actualizaciones futuras gratis</strong>}</div>}<div className="offer-bottom"><div><del>{oldPrice}</del><strong>{price}</strong><small>pago único</small></div>{priceNote && <p className="price-note">{priceNote}</p>}<a href={href}>{buttonLabel} <b aria-hidden="true">→</b></a><p>Pago seguro · Garantía de 30 días</p></div></article>;
+  const handleCheckoutClick = () => {
+    if (typeof window !== "undefined" && (window as any).fbq) {
+      (window as any).fbq("track", "InitiateCheckout", {
+        content_name: title,
+        currency: "COP",
+        value: price === "$20.000" ? 20000 : 28000,
+      });
+    }
+  };
+
+  return <article className={`offer ${featured ? "featured" : ""}`}>{featured && <b className="popular">Más popular</b>}<span className="eyebrow">{edition}</span><h3>{title}</h3><ul>{features.map(item => <li key={item}><i>{featured ? "✦" : "—"}</i>{item}</li>)}</ul>{(bonuses.length > 0 || unavailable.length > 0) && <div className="offer-bonuses"><b>✦ {featured ? "4 bonos incluidos" : "Bonos gratis"}</b>{bonuses.map(item => <span key={item}>✦ {item}</span>)}{unavailable.map(item => <del key={item}>× {item}</del>)}{featured && <strong>✦ Actualizaciones futuras gratis</strong>}</div>}<div className="offer-bottom"><div><del>{oldPrice}</del><strong>{price}</strong><small>pago único</small></div>{priceNote && <p className="price-note">{priceNote}</p>}<a href={href} onClick={handleCheckoutClick}>{buttonLabel} <b aria-hidden="true">→</b></a><p>Pago seguro · Garantía de 30 días</p></div></article>;
 }
