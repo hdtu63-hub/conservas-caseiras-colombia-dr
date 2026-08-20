@@ -56,13 +56,13 @@ function decorateCheckoutLink(anchor: HTMLAnchorElement, parameters: Record<stri
   if (anchor.href !== decoratedUrl) anchor.href = decoratedUrl;
 }
 
-function trackInitiateCheckout() {
+function trackInitiateCheckout(params: Record<string, string> = {}) {
   type FbqFn = (...args: unknown[]) => void;
   const w = window as Window & { fbq?: FbqFn; _fbq?: FbqFn };
   const fbq = w.fbq ?? w._fbq;
 
   if (typeof fbq === "function") {
-    fbq("track", "InitiateCheckout");
+    fbq("track", "InitiateCheckout", params);
     return true;
   }
 
@@ -87,7 +87,7 @@ export default function UtmPersistence() {
       const anchor = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[href*="pay.hotmart.com"]');
       if (anchor) {
         decorateCheckoutLink(anchor, collectTrackingParameters());
-        const eventQueued = trackInitiateCheckout();
+        const eventQueued = trackInitiateCheckout(collectTrackingParameters());
         const isSameTabNavigation = event.button === 0
           && !event.metaKey
           && !event.ctrlKey

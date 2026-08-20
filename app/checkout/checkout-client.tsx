@@ -92,10 +92,14 @@ export default function CheckoutClient({ edition, title, price, features }: Chec
 
         // Dispara evento de Purchase para o Meta Pixel
         if (typeof window !== "undefined" && (window as any).fbq) {
+          let utms = {};
+          try { utms = JSON.parse(window.localStorage.getItem("conservas_utm_params") || "{}"); } catch(e){}
+
           (window as any).fbq("track", "Purchase", {
             content_name: title,
             currency: "COP",
             value: edition === "esencial" ? 20000 : 28000,
+            ...utms
           });
         }
 

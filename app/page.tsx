@@ -118,10 +118,14 @@ export default function Home() {
 function Offer({ edition, title, price, oldPrice, priceNote, href, buttonLabel, features, unavailable = [], bonuses = [], featured = false }: { edition: string; title: string; price: string; oldPrice: string; priceNote?: string; href: string; buttonLabel: string; features: string[]; unavailable?: string[]; bonuses?: string[]; featured?: boolean }) {
   const handleCheckoutClick = () => {
     if (typeof window !== "undefined" && (window as any).fbq) {
+      let utms = {};
+      try { utms = JSON.parse(window.localStorage.getItem("conservas_utm_params") || "{}"); } catch(e){}
+      
       (window as any).fbq("track", "InitiateCheckout", {
         content_name: title,
         currency: "COP",
         value: price === "$20.000" ? 20000 : 28000,
+        ...utms
       });
     }
   };
