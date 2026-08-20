@@ -153,11 +153,11 @@ export default function AdminPage() {
 
   const t = stats.total;
   const d = stats.today;
-  const conversionRate = t.pageViews > 0
-    ? ((t.paymentsApproved / t.pageViews) * 100).toFixed(1)
+  const conversionRate = d.pageViews > 0
+    ? ((d.paymentsApproved / d.pageViews) * 100).toFixed(1)
     : "0.0";
-  const clickToCheckout = (t.clicksEsencial + t.clicksCompleta) > 0
-    ? (((t.checkoutViewsEsencial + t.checkoutViewsCompleta) / (t.clicksEsencial + t.clicksCompleta)) * 100).toFixed(1)
+  const clickToCheckout = (d.clicksEsencial + d.clicksCompleta) > 0
+    ? (((d.checkoutViewsEsencial + d.checkoutViewsCompleta) / (d.clicksEsencial + d.clicksCompleta)) * 100).toFixed(1)
     : "0.0";
 
   const filteredEvents = stats.recentEvents.filter((ev) => {
@@ -192,9 +192,8 @@ export default function AdminPage() {
           <h2>📊 Resumo Geral</h2>
           <div className="metrics-grid">
             <div className="metric-card">
-              <span className="metric-label">Visitas totais</span>
-              <strong className="metric-value">{t.pageViews}</strong>
-              <small className="metric-today">Hoje: {d.pageViews}</small>
+              <span className="metric-label">Visitas</span>
+              <strong className="metric-value">{d.pageViews}</strong>
             </div>
             <div 
               className="metric-card accent-green"
@@ -202,8 +201,7 @@ export default function AdminPage() {
               style={{ cursor: "pointer", outline: filterType === "approved" ? "2px solid var(--forest)" : "none" }}
             >
               <span className="metric-label">Pagamentos aprovados</span>
-              <strong className="metric-value">{t.paymentsApproved}</strong>
-              <small className="metric-today">Hoje: {d.paymentsApproved}</small>
+              <strong className="metric-value">{d.paymentsApproved}</strong>
             </div>
             <div 
               className="metric-card accent-amber"
@@ -211,13 +209,11 @@ export default function AdminPage() {
               style={{ cursor: "pointer", outline: filterType === "pending" ? "2px solid var(--terra)" : "none" }}
             >
               <span className="metric-label">Pagamentos pendentes</span>
-              <strong className="metric-value">{t.paymentsRejected}</strong>
-              <small className="metric-today">Hoje: {d.paymentsRejected}</small>
+              <strong className="metric-value">{d.paymentsRejected}</strong>
             </div>
             <div className="metric-card">
               <span className="metric-label">Comprovantes enviados</span>
-              <strong className="metric-value">{t.receiptsUploaded}</strong>
-              <small className="metric-today">Hoje: {d.receiptsUploaded}</small>
+              <strong className="metric-value">{d.receiptsUploaded}</strong>
             </div>
           </div>
         </section>
@@ -227,23 +223,19 @@ export default function AdminPage() {
           <div className="metrics-grid">
             <div className="metric-card">
               <span className="metric-label">Cliques Edição Essencial</span>
-              <strong className="metric-value">{t.clicksEsencial}</strong>
-              <small className="metric-today">Hoje: {d.clicksEsencial}</small>
+              <strong className="metric-value">{d.clicksEsencial}</strong>
             </div>
             <div className="metric-card">
               <span className="metric-label">Cliques Edição Completa</span>
-              <strong className="metric-value">{t.clicksCompleta}</strong>
-              <small className="metric-today">Hoje: {d.clicksCompleta}</small>
+              <strong className="metric-value">{d.clicksCompleta}</strong>
             </div>
             <div className="metric-card">
               <span className="metric-label">Checkout Essencial</span>
-              <strong className="metric-value">{t.checkoutViewsEsencial}</strong>
-              <small className="metric-today">Hoje: {d.checkoutViewsEsencial}</small>
+              <strong className="metric-value">{d.checkoutViewsEsencial}</strong>
             </div>
             <div className="metric-card">
               <span className="metric-label">Checkout Completa</span>
-              <strong className="metric-value">{t.checkoutViewsCompleta}</strong>
-              <small className="metric-today">Hoje: {d.checkoutViewsCompleta}</small>
+              <strong className="metric-value">{d.checkoutViewsCompleta}</strong>
             </div>
           </div>
         </section>
@@ -274,12 +266,10 @@ export default function AdminPage() {
             <div className="metric-card accent-green">
               <span className="metric-label">Vendas Essencial</span>
               <strong className="metric-value">{d.paymentsApprovedEsencial}</strong>
-              <small className="metric-today">Total Geral: {t.paymentsApprovedEsencial}</small>
             </div>
             <div className="metric-card accent-green">
               <span className="metric-label">Vendas Completa</span>
               <strong className="metric-value">{d.paymentsApprovedCompleta}</strong>
-              <small className="metric-today">Total Geral: {t.paymentsApprovedCompleta}</small>
             </div>
           </div>
         </section>
