@@ -70,8 +70,8 @@ function HeroMedia() {
     <img 
       src="/images/especialista-conservas.webp" 
       alt="Especialista en conservas caseras junto a frascos y su guía de recetas" 
-      width={800} 
-      height={1067} 
+      width="480" 
+      height="640" 
       fetchPriority="high"
       loading="eager"
       decoding="async"

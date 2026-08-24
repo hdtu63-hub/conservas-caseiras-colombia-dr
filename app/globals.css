@@ -57,7 +57,7 @@ h2 { font-size:clamp(2.65rem,5.5vw,5rem); line-height:1.02; }
 .mobile-hero-media { display:none; }
 .hero-photo { position:relative; max-width:560px; margin-inline:auto; }
 .hero-photo .image-shadow { position:absolute; inset:14px -14px -14px 14px; background:#dce7d9; }
-.hero-photo img { position:relative; width:100%; height:auto; aspect-ratio:800/1067; object-fit:cover; object-position:center; }
+.hero-photo img { position:relative; width:100%; height:auto; aspect-ratio:3/4; object-fit:cover; object-position:center; }
 .hero-photo .seal { top:-22px; right:-24px; }
 
 .product-visual { position:relative; min-height:585px; max-width:500px; margin-inline:auto; }
