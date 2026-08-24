@@ -58,8 +58,9 @@ export default function AdminPage() {
   const fetchStats = useCallback(async (pwd: string, dateStr: string) => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/track/stats?date=${dateStr}`, {
+      const res = await fetch(`/api/track/stats?date=${dateStr}&t=${Date.now()}`, {
         headers: { "x-admin-password": pwd },
+        cache: "no-store"
       });
       if (!res.ok) {
         if (res.status === 401) {
@@ -151,20 +152,7 @@ export default function AdminPage() {
     );
   }
 
-  const t = stats.total;
-  const d = stats.today;
-  const conversionRate = d.pageViews > 0
-    ? ((d.paymentsApproved / d.pageViews) * 100).toFixed(1)
-    : "0.0";
-  const clickToCheckout = (d.clicksEsencial + d.clicksCompleta) > 0
-    ? (((d.checkoutViewsEsencial + d.checkoutViewsCompleta) / (d.clicksEsencial + d.clicksCompleta)) * 100).toFixed(1)
-    : "0.0";
-
-  // Add search state
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState<"pedidos"|"trafico"|"ventas"|"emails">("pedidos");
-
-  const filteredEvents = stats.recentEvents.filter((ev) => {
+  const filteredEvents = (stats.recentEvents || []).filter((ev) => {
     if (filterType === "approved" && !ev.type.includes("approved")) return false;
     if (filterType === "pending" && ev.type !== "payment_rejected" && ev.type !== "payment_manual_review") return false;
     if (filterType === "rejected" && ev.type !== "payment_rejected") return false;
@@ -187,6 +175,22 @@ export default function AdminPage() {
     if (type === "payment_rejected" || type === "payment_manual_review") return { label: "Pendiente", className: "status-pill pending" };
     return { label: "Otro", className: "status-pill default" };
   };
+
+  // If stats doesn't have the expected shape, show a debug view
+  if (!stats.today || !stats.total || !stats.recentEvents) {
+    return (
+      <main className="admin-dashboard" style={{ padding: 40 }}>
+        <h2>Erro de Formato de Dados</h2>
+        <p>A API não retornou os dados no formato esperado. Talvez o cache esteja desatualizado.</p>
+        <pre style={{ background: '#f1f5f9', padding: 20, borderRadius: 8, overflow: 'auto' }}>
+          {JSON.stringify(stats, null, 2)}
+        </pre>
+        <button onClick={() => fetchStats(password, selectedDate)} className="refresh-btn">Tentar Novamente</button>
+      </main>
+    );
+  }
+
+  const d = stats.today;
 
   return (
     <main className="admin-dashboard">
