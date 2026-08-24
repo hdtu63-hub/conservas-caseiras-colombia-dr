@@ -9,15 +9,14 @@ interface AnalyticsData {
   events: TrackEvent[];
 }
 
-const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || "";
-const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || "";
-
 const getAuthHeaders = () => ({
-  Authorization: `Bearer ${UPSTASH_TOKEN}`,
+  Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN || ""}`,
   "Content-Type": "application/json",
 });
 
 async function loadData(): Promise<AnalyticsData> {
+  const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || "";
+  const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || "";
   if (!UPSTASH_URL || !UPSTASH_TOKEN) {
     return { events: [] };
   }
@@ -39,6 +38,8 @@ async function loadData(): Promise<AnalyticsData> {
 }
 
 async function saveData(data: AnalyticsData) {
+  const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || "";
+  const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || "";
   if (!UPSTASH_URL || !UPSTASH_TOKEN) return;
   try {
     await fetch(UPSTASH_URL, {
