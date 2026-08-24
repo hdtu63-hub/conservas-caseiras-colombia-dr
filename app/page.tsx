@@ -67,7 +67,15 @@ function ArrowButton({ href, children, light = false }: { href: string; children
 function HeroMedia() {
   return <div className="hero-photo">
     <div className="image-shadow" />
-    <Image src="/images/especialista-conservas.webp" alt="Especialista en conservas caseras junto a frascos y su guía de recetas" width={800} height={1067} priority sizes="(max-width: 620px) 100vw, 50vw" />
+    <img 
+      src="/images/especialista-conservas.webp" 
+      alt="Especialista en conservas caseras junto a frascos y su guía de recetas" 
+      width={800} 
+      height={1067} 
+      fetchPriority="high"
+      loading="eager"
+      decoding="async"
+    />
     <div className="seal"><i>incluye</i><strong>100+</strong><span>recetas</span></div>
   </div>;
 }
