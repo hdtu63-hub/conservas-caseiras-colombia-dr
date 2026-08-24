@@ -38,7 +38,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <head>
       <link rel="preconnect" href="https://connect.facebook.net" crossOrigin="anonymous" />
       <link rel="dns-prefetch" href="https://connect.facebook.net" />
-      <link rel="preload" as="image" href="/images/especialista-conservas.webp" type="image/webp" />
+      <link rel="preload" as="image" href="/images/especialista-conservas.webp" type="image/webp" fetchPriority="high" />
     </head>
     <body className={`${dmSans.variable} ${fraunces.variable}`}>
       <script dangerouslySetInnerHTML={{ __html: `
