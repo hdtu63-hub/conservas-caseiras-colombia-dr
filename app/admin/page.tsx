@@ -55,6 +55,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [filterType, setFilterType] = useState<"all" | "approved" | "pending" | "rejected">("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState<"pedidos"|"trafico"|"ventas"|"emails">("pedidos");
   const fetchStats = useCallback(async (pwd: string, dateStr: string) => {
     try {
       setLoading(true);
@@ -152,18 +154,6 @@ export default function AdminPage() {
     );
   }
 
-  const filteredEvents = (stats.recentEvents || []).filter((ev) => {
-    if (filterType === "approved" && !ev.type.includes("approved")) return false;
-    if (filterType === "pending" && ev.type !== "payment_rejected" && ev.type !== "payment_manual_review") return false;
-    if (filterType === "rejected" && ev.type !== "payment_rejected") return false;
-    
-    if (searchTerm) {
-      const email = ev.metadata?.email?.toLowerCase() || "";
-      if (!email.includes(searchTerm.toLowerCase())) return false;
-    }
-    return true;
-  });
-
   const generateNameFromEmail = (email: string) => {
     if (!email) return "Cliente Anónimo";
     const namePart = email.split('@')[0];
@@ -191,6 +181,18 @@ export default function AdminPage() {
   }
 
   const d = stats.today;
+
+  const filteredEvents = (stats.recentEvents || []).filter((ev) => {
+    if (filterType === "approved" && !ev.type.includes("approved")) return false;
+    if (filterType === "pending" && ev.type !== "payment_rejected" && ev.type !== "payment_manual_review") return false;
+    if (filterType === "rejected" && ev.type !== "payment_rejected") return false;
+    
+    if (searchTerm) {
+      const email = ev.metadata?.email?.toLowerCase() || "";
+      if (!email.includes(searchTerm.toLowerCase())) return false;
+    }
+    return true;
+  });
 
   return (
     <main className="admin-dashboard">
