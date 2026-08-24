@@ -54,8 +54,7 @@ export default function AdminPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [filterType, setFilterType] = useState<"all" | "approved" | "pending">("all");
-
+  const [filterType, setFilterType] = useState<"all" | "approved" | "pending" | "rejected">("all");
   const fetchStats = useCallback(async (pwd: string, dateStr: string) => {
     try {
       setLoading(true);
