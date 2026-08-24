@@ -161,173 +161,186 @@ export default function AdminPage() {
     ? (((d.checkoutViewsEsencial + d.checkoutViewsCompleta) / (d.clicksEsencial + d.clicksCompleta)) * 100).toFixed(1)
     : "0.0";
 
+  // Add search state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState<"pedidos"|"trafico"|"ventas"|"emails">("pedidos");
+
   const filteredEvents = stats.recentEvents.filter((ev) => {
-    if (filterType === "all") return true;
-    if (filterType === "approved") return ev.type.includes("approved");
-    if (filterType === "pending") return ev.type === "payment_rejected" || ev.type === "payment_manual_review";
+    if (filterType === "approved" && !ev.type.includes("approved")) return false;
+    if (filterType === "pending" && ev.type !== "payment_rejected" && ev.type !== "payment_manual_review") return false;
+    if (filterType === "rejected" && ev.type !== "payment_rejected") return false;
+    
+    if (searchTerm) {
+      const email = ev.metadata?.email?.toLowerCase() || "";
+      if (!email.includes(searchTerm.toLowerCase())) return false;
+    }
     return true;
   });
 
+  const generateNameFromEmail = (email: string) => {
+    if (!email) return "Cliente Anónimo";
+    const namePart = email.split('@')[0];
+    return namePart.replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const getStatusInfo = (type: string) => {
+    if (type.includes("approved")) return { label: "Aprobado", className: "status-pill approved" };
+    if (type === "payment_rejected" || type === "payment_manual_review") return { label: "Pendiente", className: "status-pill pending" };
+    return { label: "Otro", className: "status-pill default" };
+  };
+
   return (
-    <main className="admin-page">
+    <main className="admin-dashboard">
       <div className="admin-container">
-        <header className="admin-header">
-          <div>
-            <h1>Painel de Administração</h1>
-            <p>Conservas Caseiras — Colômbia</p>
+        
+        {/* Header */}
+        <header className="dashboard-header">
+          <div className="header-title">
+            <h1>Panel de ventas</h1>
+            <p>Pedidos, verificación de pagos y comprobantes.</p>
           </div>
-          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <div className="header-actions">
             <input 
               type="date" 
               value={selectedDate} 
               onChange={(e) => setSelectedDate(e.target.value)} 
-              style={{ padding: "8px", border: "1px solid var(--line)", borderRadius: "4px" }}
+              className="date-picker"
             />
-            <button onClick={() => fetchStats(password, selectedDate)} className="admin-refresh" disabled={loading}>
-              {loading ? "⟳ Carregando..." : "⟳ Atualizar"}
+            <button onClick={() => fetchStats(password, selectedDate)} className="refresh-btn" disabled={loading}>
+              {loading ? "⟳..." : "⟳"}
+            </button>
+            <button onClick={() => { setAuthenticated(false); setStats(null); }} className="logout-btn">
+              → Salir
             </button>
           </div>
         </header>
 
-        <section className="admin-section">
-          <h2>📊 Resumo Geral</h2>
-          <div className="metrics-grid">
-            <div className="metric-card">
-              <span className="metric-label">Visitas</span>
-              <strong className="metric-value">{d.pageViews}</strong>
-            </div>
-            <div 
-              className="metric-card accent-green"
-              onClick={() => setFilterType(filterType === "approved" ? "all" : "approved")}
-              style={{ cursor: "pointer", outline: filterType === "approved" ? "2px solid var(--forest)" : "none" }}
-            >
-              <span className="metric-label">Pagamentos aprovados</span>
-              <strong className="metric-value">{d.paymentsApproved}</strong>
-            </div>
-            <div 
-              className="metric-card accent-amber"
-              onClick={() => setFilterType(filterType === "pending" ? "all" : "pending")}
-              style={{ cursor: "pointer", outline: filterType === "pending" ? "2px solid var(--terra)" : "none" }}
-            >
-              <span className="metric-label">Pagamentos pendentes</span>
-              <strong className="metric-value">{d.paymentsRejected}</strong>
-            </div>
-            <div className="metric-card">
-              <span className="metric-label">Comprovantes enviados</span>
-              <strong className="metric-value">{d.receiptsUploaded}</strong>
-            </div>
-          </div>
-        </section>
+        {/* Tabs */}
+        <nav className="dashboard-tabs">
+          <button className={`tab ${activeTab === 'pedidos' ? 'active' : ''}`} onClick={() => setActiveTab('pedidos')}>Pedidos</button>
+          <button className={`tab ${activeTab === 'trafico' ? 'active' : ''}`} onClick={() => setActiveTab('trafico')}>Tráfico y embudo</button>
+          <button className={`tab ${activeTab === 'ventas' ? 'active' : ''}`} onClick={() => setActiveTab('ventas')}>Ventas por día</button>
+          <button className={`tab ${activeTab === 'emails' ? 'active' : ''}`} onClick={() => setActiveTab('emails')}>Emails</button>
+        </nav>
 
-        <section className="admin-section">
-          <h2>🖱️ Cliques e Conversão</h2>
-          <div className="metrics-grid">
-            <div className="metric-card">
-              <span className="metric-label">Cliques Edição Essencial</span>
-              <strong className="metric-value">{d.clicksEsencial}</strong>
-            </div>
-            <div className="metric-card">
-              <span className="metric-label">Cliques Edição Completa</span>
-              <strong className="metric-value">{d.clicksCompleta}</strong>
-            </div>
-            <div className="metric-card">
-              <span className="metric-label">Checkout Essencial</span>
-              <strong className="metric-value">{d.checkoutViewsEsencial}</strong>
-            </div>
-            <div className="metric-card">
-              <span className="metric-label">Checkout Completa</span>
-              <strong className="metric-value">{d.checkoutViewsCompleta}</strong>
-            </div>
-          </div>
-        </section>
-
-        <section className="admin-section">
-          <h2>📈 Taxas de Conversão e Vendas ({selectedDate})</h2>
+        {/* Main Content Area */}
+        <div className="dashboard-content">
           
-          <div className="metrics-grid" style={{ marginBottom: "24px", display: "grid", gridTemplateColumns: "1fr", background: "rgba(20, 93, 61, 0.1)", border: "1px solid var(--forest)", padding: "16px", borderRadius: "12px" }}>
-            <div className="metric-card" style={{ background: "transparent", border: "none", padding: "0", textAlign: "center", boxShadow: "none" }}>
-              <span className="metric-label" style={{ fontSize: "16px", textTransform: "uppercase", letterSpacing: "1px", color: "var(--forest)" }}>Vendas Totais do Dia</span>
-              <strong className="metric-value" style={{ fontSize: "42px", color: "var(--forest)" }}>
+          {/* Top Metrics Row */}
+          <div className="metrics-row">
+            <div className="metric-box">
+              <span className="metric-label">INGRESOS APROBADOS</span>
+              <strong className="metric-value">
                 {(d.totalRevenueToday || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}
+              </strong>
+            </div>
+            <div className="metric-box">
+              <span className="metric-label">PEDIDOS</span>
+              <strong className="metric-value">{d.paymentsApproved + d.paymentsRejected}</strong>
+            </div>
+            <div className="metric-box">
+              <span className="metric-label">APROBADOS / RECHAZADOS</span>
+              <strong className="metric-value">{d.paymentsApproved} / {d.paymentsRejected}</strong>
+            </div>
+            <div className="metric-box">
+              <span className="metric-label">TICKET PROMEDIO</span>
+              <strong className="metric-value">
+                {d.paymentsApproved > 0 
+                  ? ((d.totalRevenueToday || 0) / d.paymentsApproved).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })
+                  : "$0"}
               </strong>
             </div>
           </div>
 
-          <div className="metrics-grid metrics-wide">
-            <div className="metric-card">
-              <span className="metric-label">Visita → Pagamento</span>
-              <strong className="metric-value">{conversionRate}%</strong>
-              <div className="metric-bar"><div style={{ width: `${Math.min(parseFloat(conversionRate), 100)}%` }} /></div>
+          {/* Filters & Search Row */}
+          <div className="filters-row">
+            <div className="filter-pills">
+              <button className={`pill ${filterType === 'all' ? 'active' : ''}`} onClick={() => setFilterType('all')}>Todos</button>
+              <button className={`pill ${filterType === 'approved' ? 'active' : ''}`} onClick={() => setFilterType('approved')}>Aprobado</button>
+              <button className={`pill ${filterType === 'pending' ? 'active' : ''}`} onClick={() => setFilterType('pending')}>Pendiente</button>
+              <button className={`pill ${filterType === 'rejected' ? 'active' : ''}`} onClick={() => setFilterType('rejected')}>Rechazado</button>
             </div>
-            <div className="metric-card">
-              <span className="metric-label">Clique → Checkout</span>
-              <strong className="metric-value">{clickToCheckout}%</strong>
-              <div className="metric-bar"><div style={{ width: `${Math.min(parseFloat(clickToCheckout), 100)}%` }} /></div>
-            </div>
-            <div className="metric-card accent-green">
-              <span className="metric-label">Vendas Essencial</span>
-              <strong className="metric-value">{d.paymentsApprovedEsencial}</strong>
-            </div>
-            <div className="metric-card accent-green">
-              <span className="metric-label">Vendas Completa</span>
-              <strong className="metric-value">{d.paymentsApprovedCompleta}</strong>
+            <div className="search-bar">
+              <input 
+                type="text" 
+                placeholder="Buscar por nombre, correo..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
           </div>
-        </section>
 
-        <section className="admin-section">
-          <h2>📋 Últimos Eventos</h2>
-          <div className="events-table-wrap">
-            <table className="events-table">
-              <thead>
-                <tr>
-                  <th>Data / Hora</th>
-                  <th>Evento</th>
-                  <th>Detalhes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredEvents.map((ev) => (
-                  <tr key={ev.id} className={`event-row event-${ev.type.includes("approved") ? "approved" : ev.type.includes("rejected") ? "rejected" : "default"}`}>
-                    <td className="event-time">
-                      {new Date(ev.timestamp).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}{" "}
-                      {new Date(ev.timestamp).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-                    </td>
-                    <td>{EVENT_LABELS[ev.type] || ev.type}</td>
-                    <td className="event-meta">
-                      {ev.metadata ? Object.entries(ev.metadata).map(([k, v]) => {
-                        if (k === "receiptUrl") {
-                          return (
-                            <span key={k}>
-                              <a href={v} target="_blank" rel="noopener noreferrer" style={{color: "var(--terra)", textDecoration: "underline"}}>Ver Comprovante ↗</a>
-                            </span>
-                          );
-                        }
-                        return <span key={k}>{k}: {v}</span>;
-                      }) : "—"}
-                      
-                      {ev.type === "payment_manual_review" && ev.metadata?.email && ev.metadata?.edition && (
-                        <div style={{ marginTop: "8px" }}>
-                          <button onClick={() => handleManualApprove(ev.metadata!.email, ev.metadata!.edition, "")} style={{ background: "var(--forest)", color: "#fff", padding: "4px 8px", borderRadius: "4px", fontSize: "12px", border: "none", cursor: "pointer" }}>
-                            ✅ Aceitar Comprovante
-                          </button>
+          {/* Orders List */}
+          {activeTab === 'pedidos' && (
+            <div className="orders-list">
+              {filteredEvents.map((ev) => {
+                const email = ev.metadata?.email || "Email no disponible";
+                const name = generateNameFromEmail(email);
+                const edition = ev.metadata?.edition || "esencial";
+                const amount = edition === "esencial" ? "$20.000" : "$28.000";
+                const status = getStatusInfo(ev.type);
+                const hasReceipt = !!ev.metadata?.receiptUrl;
+
+                return (
+                  <article key={ev.id} className="order-card">
+                    <div className="order-header">
+                      <div className="customer-info">
+                        <h3>{name}</h3>
+                        <p>{email} · {ev.metadata?.source || "Web"}</p>
+                        <time>{new Date(ev.timestamp).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" })}</time>
+                      </div>
+                      <div className="order-pricing">
+                        <span className={status.className}>{status.label}</span>
+                        <div className="price-info">
+                          <strong>{amount}</strong> <del className="strike">$29.900</del>
                         </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {filteredEvents.length === 0 && (
-                  <tr><td colSpan={3} className="no-events">Nenhum evento registrado ainda</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
+                      </div>
+                    </div>
+                    
+                    <div className="order-details">
+                      <p>Producto: {edition === "esencial" ? "Guía Esencial de Conservas" : "Colección Completa de Conservas"}</p>
+                    </div>
 
-        <footer className="admin-footer">
-          <span>Atualização automática a cada 30 segundos</span>
-          <span>Conservas Caseiras © 2026</span>
-        </footer>
+                    {/* Metadata / Trust box (simulated for realism based on mockup) */}
+                    {hasReceipt && (
+                      <div className="order-trust-box">
+                        <p className="trust-main">Comprobante enviado manualmente por el usuario. Validar en Nequi/Bancolombia antes de aprobar.</p>
+                      </div>
+                    )}
+
+                    <div className="order-actions">
+                      {hasReceipt && (
+                        <a href={ev.metadata?.receiptUrl} target="_blank" rel="noopener noreferrer" className="btn-receipt">
+                          📄 Ver comprobante
+                        </a>
+                      )}
+                      
+                      {ev.type === "payment_manual_review" && (
+                        <>
+                          <button onClick={() => handleManualApprove(email, edition, ev.metadata?.receiptUrl || "")} className="btn-approve">
+                            ✓ Aprobar
+                          </button>
+                          <button onClick={() => alert("Rechazo manual aún no implementado")} className="btn-reject">
+                            ✕ Rechazar
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+              
+              {filteredEvents.length === 0 && (
+                <div className="empty-state">No se encontraron pedidos con estos filtros.</div>
+              )}
+            </div>
+          )}
+
+          {activeTab !== 'pedidos' && (
+            <div className="empty-state">Esta pestaña estará disponible pronto. Utiliza "Pedidos" para gestionar las ventas.</div>
+          )}
+
+        </div>
       </div>
     </main>
   );
