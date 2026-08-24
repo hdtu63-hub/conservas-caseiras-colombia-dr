@@ -1,10 +1,9 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,400&display=swap");
+:root { --cream:#f4f0e7; --paper:#f8f5ed; --ink:#211914; --forest:#145d3d; --terra:#da6242; --ochre:#e5ae52; --line:rgba(33,25,20,.18); --bg: #f8f6f0; --text: #2a2c26; --primary: #c15542; --primary-hover: #b04938; --border: #e6e2d6; }
 @import "tailwindcss";
 
-:root { --cream:#f4f0e7; --paper:#f8f5ed; --ink:#211914; --forest:#145d3d; --terra:#da6242; --ochre:#e5ae52; --line:rgba(33,25,20,.18); }
 * { box-sizing:border-box; }
 html { scroll-behavior:smooth; }
-body { margin:0; overflow-x:hidden; background:var(--cream); color:var(--ink); font-family:"DM Sans",sans-serif; }
+body { margin:0; overflow-x:hidden; background:var(--cream); color:var(--ink); font-family:var(--font-dm-sans),"DM Sans",sans-serif; }
 a { color:inherit; text-decoration:none; }
 img { display:block; max-width:100%; }
 mark { color:var(--terra); background:none; }
@@ -14,7 +13,7 @@ em { font-weight:400; }
 .container { width:min(1280px,calc(100% - 48px)); margin-inline:auto; }
 .narrow { width:min(960px,calc(100% - 48px)); margin-inline:auto; }
 .section { padding:112px 0; border-top:1px solid var(--line); }
-h1,h2,h3 { font-family:"Fraunces",Georgia,serif; font-weight:300; letter-spacing:-.035em; margin:0; }
+h1,h2,h3 { font-family:var(--font-fraunces),"Fraunces",Georgia,serif; font-weight:300; letter-spacing:-.035em; margin:0; }
 h2 { font-size:clamp(2.65rem,5.5vw,5rem); line-height:1.02; }
 .eyebrow { margin:0 0 18px; font-size:11px; text-transform:uppercase; letter-spacing:.28em; font-weight:600; }
 
