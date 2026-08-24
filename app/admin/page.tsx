@@ -68,13 +68,14 @@ export default function AdminPage() {
           setError("Senha incorreta");
           return;
         }
-        throw new Error("Erro do servidor");
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail || body.error || `Erro ${res.status}`);
       }
       const data = await res.json();
       setStats(data);
       setError("");
-    } catch {
-      setError("Erro ao carregar dados");
+    } catch (e: unknown) {
+      setError(`Erro: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setLoading(false);
     }
