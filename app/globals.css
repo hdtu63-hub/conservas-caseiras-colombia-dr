@@ -1,5 +1,4 @@
 :root { --cream:#f4f0e7; --paper:#f8f5ed; --ink:#211914; --forest:#145d3d; --terra:#da6242; --ochre:#e5ae52; --line:rgba(33,25,20,.18); --bg: #f8f6f0; --text: #2a2c26; --primary: #c15542; --primary-hover: #b04938; --border: #e6e2d6; }
-@import "tailwindcss";
 
 * { box-sizing:border-box; }
 html { scroll-behavior:smooth; }
