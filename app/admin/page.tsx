@@ -155,15 +155,15 @@ export default function AdminPage() {
   }
 
   const generateNameFromEmail = (email: string) => {
-    if (!email) return "Cliente Anónimo";
+    if (!email) return "Cliente Anônimo";
     const namePart = email.split('@')[0];
     return namePart.replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
   const getStatusInfo = (type: string) => {
-    if (type.includes("approved")) return { label: "Aprobado", className: "status-pill approved" };
-    if (type === "payment_rejected" || type === "payment_manual_review") return { label: "Pendiente", className: "status-pill pending" };
-    return { label: "Otro", className: "status-pill default" };
+    if (type.includes("approved")) return { label: "Aprovado", className: "status-pill approved" };
+    if (type === "payment_rejected" || type === "payment_manual_review") return { label: "Pendente", className: "status-pill pending" };
+    return { label: "Outro", className: "status-pill default" };
   };
 
   // If stats doesn't have the expected shape, show a debug view
@@ -201,8 +201,8 @@ export default function AdminPage() {
         {/* Header */}
         <header className="dashboard-header">
           <div className="header-title">
-            <h1>Panel de ventas</h1>
-            <p>Pedidos, verificación de pagos y comprobantes.</p>
+            <h1>Painel de Vendas</h1>
+            <p>Pedidos, verificação de pagamentos e comprovantes.</p>
           </div>
           <div className="header-actions">
             <input 
@@ -215,7 +215,7 @@ export default function AdminPage() {
               {loading ? "⟳..." : "⟳"}
             </button>
             <button onClick={() => { setAuthenticated(false); setStats(null); }} className="logout-btn">
-              → Salir
+              → Sair
             </button>
           </div>
         </header>
@@ -223,8 +223,8 @@ export default function AdminPage() {
         {/* Tabs */}
         <nav className="dashboard-tabs">
           <button className={`tab ${activeTab === 'pedidos' ? 'active' : ''}`} onClick={() => setActiveTab('pedidos')}>Pedidos</button>
-          <button className={`tab ${activeTab === 'trafico' ? 'active' : ''}`} onClick={() => setActiveTab('trafico')}>Tráfico y embudo</button>
-          <button className={`tab ${activeTab === 'ventas' ? 'active' : ''}`} onClick={() => setActiveTab('ventas')}>Ventas por día</button>
+          <button className={`tab ${activeTab === 'trafico' ? 'active' : ''}`} onClick={() => setActiveTab('trafico')}>Tráfego e funil</button>
+          <button className={`tab ${activeTab === 'ventas' ? 'active' : ''}`} onClick={() => setActiveTab('ventas')}>Vendas por dia</button>
           <button className={`tab ${activeTab === 'emails' ? 'active' : ''}`} onClick={() => setActiveTab('emails')}>Emails</button>
         </nav>
 
@@ -234,7 +234,7 @@ export default function AdminPage() {
           {/* Top Metrics Row */}
           <div className="metrics-row">
             <div className="metric-box">
-              <span className="metric-label">INGRESOS APROBADOS</span>
+              <span className="metric-label">RECEITA APROVADA</span>
               <strong className="metric-value">
                 {(d.totalRevenueToday || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}
               </strong>
@@ -244,11 +244,11 @@ export default function AdminPage() {
               <strong className="metric-value">{d.paymentsApproved + d.paymentsRejected}</strong>
             </div>
             <div className="metric-box">
-              <span className="metric-label">APROBADOS / RECHAZADOS</span>
+              <span className="metric-label">APROVADOS / RECUSADOS</span>
               <strong className="metric-value">{d.paymentsApproved} / {d.paymentsRejected}</strong>
             </div>
             <div className="metric-box">
-              <span className="metric-label">TICKET PROMEDIO</span>
+              <span className="metric-label">TICKET MÉDIO</span>
               <strong className="metric-value">
                 {d.paymentsApproved > 0 
                   ? ((d.totalRevenueToday || 0) / d.paymentsApproved).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })
@@ -261,14 +261,14 @@ export default function AdminPage() {
           <div className="filters-row">
             <div className="filter-pills">
               <button className={`pill ${filterType === 'all' ? 'active' : ''}`} onClick={() => setFilterType('all')}>Todos</button>
-              <button className={`pill ${filterType === 'approved' ? 'active' : ''}`} onClick={() => setFilterType('approved')}>Aprobado</button>
-              <button className={`pill ${filterType === 'pending' ? 'active' : ''}`} onClick={() => setFilterType('pending')}>Pendiente</button>
-              <button className={`pill ${filterType === 'rejected' ? 'active' : ''}`} onClick={() => setFilterType('rejected')}>Rechazado</button>
+              <button className={`pill ${filterType === 'approved' ? 'active' : ''}`} onClick={() => setFilterType('approved')}>Aprovado</button>
+              <button className={`pill ${filterType === 'pending' ? 'active' : ''}`} onClick={() => setFilterType('pending')}>Pendente</button>
+              <button className={`pill ${filterType === 'rejected' ? 'active' : ''}`} onClick={() => setFilterType('rejected')}>Recusado</button>
             </div>
             <div className="search-bar">
               <input 
                 type="text" 
-                placeholder="Buscar por nombre, correo..." 
+                placeholder="Buscar por nome, e-mail..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -279,7 +279,7 @@ export default function AdminPage() {
           {activeTab === 'pedidos' && (
             <div className="orders-list">
               {filteredEvents.map((ev) => {
-                const email = ev.metadata?.email || "Email no disponible";
+                const email = ev.metadata?.email || "E-mail indisponível";
                 const name = generateNameFromEmail(email);
                 const edition = ev.metadata?.edition || "esencial";
                 const amount = edition === "esencial" ? "$20.000" : "$28.000";
@@ -292,7 +292,7 @@ export default function AdminPage() {
                       <div className="customer-info">
                         <h3>{name}</h3>
                         <p>{email} · {ev.metadata?.source || "Web"}</p>
-                        <time>{new Date(ev.timestamp).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" })}</time>
+                        <time>{new Date(ev.timestamp).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</time>
                       </div>
                       <div className="order-pricing">
                         <span className={status.className}>{status.label}</span>
@@ -303,30 +303,30 @@ export default function AdminPage() {
                     </div>
                     
                     <div className="order-details">
-                      <p>Producto: {edition === "esencial" ? "Guía Esencial de Conservas" : "Colección Completa de Conservas"}</p>
+                      <p>Produto: {edition === "esencial" ? "Guia Essencial de Conservas" : "Coleção Completa de Conservas"}</p>
                     </div>
 
                     {/* Metadata / Trust box (simulated for realism based on mockup) */}
                     {hasReceipt && (
                       <div className="order-trust-box">
-                        <p className="trust-main">Comprobante enviado manualmente por el usuario. Validar en Nequi/Bancolombia antes de aprobar.</p>
+                        <p className="trust-main">Comprovante enviado manualmente pelo usuário. Valide o recebimento na sua conta antes de aprovar.</p>
                       </div>
                     )}
 
                     <div className="order-actions">
                       {hasReceipt && (
                         <a href={ev.metadata?.receiptUrl} target="_blank" rel="noopener noreferrer" className="btn-receipt">
-                          📄 Ver comprobante
+                          📄 Ver comprovante
                         </a>
                       )}
                       
                       {ev.type === "payment_manual_review" && (
                         <>
                           <button onClick={() => handleManualApprove(email, edition, ev.metadata?.receiptUrl || "")} className="btn-approve">
-                            ✓ Aprobar
+                            ✓ Aprovar
                           </button>
-                          <button onClick={() => alert("Rechazo manual aún no implementado")} className="btn-reject">
-                            ✕ Rechazar
+                          <button onClick={() => alert("Recusa manual ainda não implementada")} className="btn-reject">
+                            ✕ Recusar
                           </button>
                         </>
                       )}
@@ -336,13 +336,13 @@ export default function AdminPage() {
               })}
               
               {filteredEvents.length === 0 && (
-                <div className="empty-state">No se encontraron pedidos con estos filtros.</div>
+                <div className="empty-state">Nenhum pedido encontrado com estes filtros.</div>
               )}
             </div>
           )}
 
           {activeTab !== 'pedidos' && (
-            <div className="empty-state">Esta pestaña estará disponible pronto. Utiliza "Pedidos" para gestionar las ventas.</div>
+            <div className="empty-state">Esta aba estará disponível em breve. Use "Pedidos" para gerenciar as vendas.</div>
           )}
 
         </div>
