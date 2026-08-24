@@ -105,12 +105,15 @@ export default function CheckoutClient({ edition, title, price, features }: Chec
 
         setStatus("email_input");
       } else {
-        setReceiptUrl(data.receiptUrl);
+        // Sempre mostra formulário de email para revisão manual, nunca error genérico
+        setReceiptUrl(data.receiptUrl || null);
         setStatus("email_input_rejected");
         setMessage(data.message);
       }
     } catch {
-      setStatus("rejected");
+      // Mesmo com erro de rede, mostra formulário de revisão manual
+      setReceiptUrl(null);
+      setStatus("email_input_rejected");
       setMessage("Aguarde, estamos verificando tu pago. Te contactaremos pronto.");
     }
   }

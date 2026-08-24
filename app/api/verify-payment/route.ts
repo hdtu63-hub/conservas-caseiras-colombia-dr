@@ -17,11 +17,14 @@ export async function POST(req: NextRequest) {
 
     const mimeType = file.type;
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const base64 = buffer.toString("base64");
 
-    const ext = mimeType === "application/pdf" ? "pdf" : "jpg";
-    const filename = `receipt_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    // Edge-compatible base64 encoding (no Buffer)
+    const bytes = new Uint8Array(arrayBuffer);
+    let binary = "";
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
@@ -51,7 +54,7 @@ export async function POST(req: NextRequest) {
             content: mimeType === "application/pdf" ? [
               {
                 type: "text",
-                text: `El usuario subió un PDF. No podemos verificar PDFs automáticamente en el Edge. Por favor responde que NO es un comprobante válido para forzar revisión manual. (Responde: {"es_comprobante": false, "razon": "PDF requiere revisión manual"})`,
+                text: `El usuario subió un PDF. No podemos verificar PDFs automáticamente. Por favor responde que NO es un comprobante válido para forzar revisión manual. Responde: {"es_comprobante": false, "razon": "PDF requiere revisión manual"}`,
               }
             ] : [
               {
@@ -90,25 +93,6 @@ export async function POST(req: NextRequest) {
           const montoStr = result.monto ? String(result.monto) : (edition === "esencial" ? "20000" : "28000");
           await trackEvent("payment_approved", { edition, monto: montoStr });
           
-          // ==== ENVIO DE E-MAIL (Brevo) ====
-          // const brevoApiKey = process.env.BREVO_API_KEY;
-          // if (brevoApiKey) {
-          //   await fetch("https://api.brevo.com/v3/smtp/email", {
-          //     method: "POST",
-          //     headers: {
-          //       "api-key": brevoApiKey,
-          //       "Content-Type": "application/json"
-          //     },
-          //     body: JSON.stringify({
-          //       sender: { name: "Conservas Caseiras", email: "seu_email_cadastrado_no_brevo@dominio.com" },
-          //       to: [{ email: "seu_email_para_receber_aviso@gmail.com", name: "Admin" }],
-          //       subject: "Novo Pagamento Aprovado!",
-          //       htmlContent: `<p>Um novo pagamento da edição <strong>${edition}</strong> foi aprovado.</p>`
-          //     })
-          //   });
-          // }
-          // ==========================================
-
           return NextResponse.json({
             approved: true,
             message: "¡Pago verificado correctamente!",

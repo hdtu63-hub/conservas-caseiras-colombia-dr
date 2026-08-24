@@ -15,8 +15,14 @@ export async function POST(req: NextRequest) {
 
     const mimeType = file.type;
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const base64 = buffer.toString("base64");
+
+    // Edge-compatible base64 encoding (no Buffer)
+    const bytes = new Uint8Array(arrayBuffer);
+    let binary = "";
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
     const filename = `comprovante_${email.replace(/[^a-z0-9]/gi, '_')}.${mimeType === 'application/pdf' ? 'pdf' : 'jpg'}`;
 
     // ==== ENVIO DE E-MAIL COM ANEXO (Brevo) ====
