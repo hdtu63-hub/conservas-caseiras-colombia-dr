@@ -25,7 +25,6 @@ async function loadData(): Promise<AnalyticsData> {
       method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(["GET", "conservas_analytics"]),
-      cache: "no-store",
     });
     const data = await res.json();
     if (data.result) {
