@@ -1,13 +1,22 @@
-import { env } from "cloudflare:workers";
+import { getRequestContext } from "@cloudflare/next-on-pages";
 import { drizzle } from "drizzle-orm/d1";
 import * as schema from "./schema";
 
 export function getDb() {
-  if (!env.DB) {
-    throw new Error(
-      "Cloudflare D1 binding `DB` is unavailable. Set the `d1` field in .openai/hosting.json to `DB` or let your control plane inject the real binding values before using the database."
-    );
+  let dbBinding = process.env.DB;
+  
+  try {
+    const ctx = getRequestContext();
+    if (ctx && ctx.env && ctx.env.DB) {
+      dbBinding = ctx.env.DB;
+    }
+  } catch (e) {
+    // getRequestContext might fail outside of edge runtime
   }
 
-  return drizzle(env.DB, { schema });
+  if (!dbBinding) {
+    throw new Error("Cloudflare D1 binding `DB` is unavailable.");
+  }
+
+  return drizzle(dbBinding as any, { schema });
 }

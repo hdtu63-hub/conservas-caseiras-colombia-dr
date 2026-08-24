@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { trackEvent } from "@/app/lib/analytics";
 
+export const runtime = "edge";
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
@@ -49,7 +51,7 @@ export async function POST(req: NextRequest) {
             content: mimeType === "application/pdf" ? [
               {
                 type: "text",
-                text: `Analiza este texto extraído de un archivo PDF. ¿Es un comprobante de pago real de una transferencia o transacción financiera?\n\nTexto del PDF:\n${(await require('pdf-parse')(buffer)).text}`,
+                text: `El usuario subió un PDF. No podemos verificar PDFs automáticamente en el Edge. Por favor responde que NO es un comprobante válido para forzar revisión manual. (Responde: {"es_comprobante": false, "razon": "PDF requiere revisión manual"})`,
               }
             ] : [
               {

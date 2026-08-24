@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = "edge";
+
 export async function POST(req: NextRequest) {
   try {
     const { email, edition, receiptUrl, moveReceipt } = await req.json();
@@ -8,19 +10,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Email is required" }, { status: 400 });
     }
 
-    if (moveReceipt && receiptUrl) {
-      const fs = require("fs");
-      const path = require("path");
-      const match = receiptUrl.match(/\/api\/receipts\/(rejeitados)\/(.+)/);
-      if (match) {
-        const filename = match[2];
-        const oldPath = path.join(process.cwd(), "data", "receipts", "rejeitados", filename);
-        const newPath = path.join(process.cwd(), "data", "receipts", "aprovados", filename);
-        if (fs.existsSync(oldPath)) {
-          fs.renameSync(oldPath, newPath);
-        }
-      }
-    }
+    // Receipt moving disabled (unsupported on edge without R2)
 
     // ==== ENVIO DE E-MAIL (Brevo) PARA O CLIENTE ====
     const brevoApiKey = process.env.BREVO_API_KEY;
