@@ -26,7 +26,8 @@ export default function RuletaModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
   const [step, setStep] = useState<"spin" | "win_75" | "downsell_8k">("spin");
-  const [rotation, setRotation] = useState(0);
+  const [needleAngle, setNeedleAngle] = useState(0);
+  const [activeSliceIndex, setActiveSliceIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutos
   const [timeLeft8k, setTimeLeft8k] = useState(300); // 5 minutos
   const [pointerBounce, setPointerBounce] = useState(false);
@@ -36,6 +37,7 @@ export default function RuletaModal() {
   const isNavigatingInternally = useRef(false);
   const hasTriggeredRef = useRef(false);
   const animFrameRef = useRef<number | null>(null);
+  const lastPinRef = useRef<number>(-1);
 
   // Inicializar Web Audio API bajo demanda
   const getAudioContext = useCallback(() => {
@@ -183,7 +185,6 @@ export default function RuletaModal() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // 1. Marcar cuando el usuario hace clic en enlaces internos
     const handleLinkClick = (e: MouseEvent) => {
       const target = (e.target as HTMLElement).closest("a");
       if (target && target.href) {
@@ -195,7 +196,6 @@ export default function RuletaModal() {
     };
     document.addEventListener("click", handleLinkClick, true);
 
-    // 2. BACKREDIRECT: Insertar estado en el historial
     try {
       if (window.history && window.history.pushState) {
         window.history.pushState({ page: "conservas_home_active" }, "", window.location.href);
@@ -215,7 +215,6 @@ export default function RuletaModal() {
 
     window.addEventListener("popstate", handlePopState);
 
-    // 3. EXIT INTENT (Desktop): Detectar salida del cursor por la parte superior
     const handleMouseLeave = (e: MouseEvent) => {
       if (isNavigatingInternally.current) return;
       if (e.clientY <= 8 && !hasTriggeredRef.current) {
@@ -234,59 +233,74 @@ export default function RuletaModal() {
     };
   }, []);
 
-  // Función para girar la ruleta con física y suspenso
+  // Función para girar la aguja de la ruleta con física y suspenso
   const handleSpin = () => {
     if (isSpinning || step !== "spin") return;
     setIsSpinning(true);
     getAudioContext();
 
-    // 7 vueltas completas (2520 deg) = la aguja pasa por todos los descuentos,
-    // desacelera en 5% DESCUENTO (Slice 7) y al final frena en 75% DESCUENTO (Slice 0)
-    const targetDegrees = 360 * 7;
-    setRotation(targetDegrees);
-
-    const spinDuration = 5500; // 5.5 segundos
+    const spinDuration = 6000; // 6.0 segundos de suspenso
     const startTime = performance.now();
-    let lastPinIndex = -1;
+    lastPinRef.current = -1;
 
-    const trackTicks = (now: number) => {
+    const animateNeedle = (now: number) => {
       const elapsed = now - startTime;
       const progress = Math.min(1, elapsed / spinDuration);
 
-      const easeProgress = 1 - Math.pow(1 - progress, 4.4);
-      const currentDegrees = easeProgress * targetDegrees;
-      const currentPin = Math.floor((currentDegrees + 22.5) / 45);
+      let currentDeg = 0;
+      if (progress < 0.74) {
+        // Fase 1: Rápido giro por todos los descuentos y desaceleración natural
+        const norm = progress / 0.74;
+        const ease = 1 - Math.pow(1 - norm, 3.2);
+        currentDeg = ease * 2435; // Gira pasando 10%, 30%, 50%, Bono, 20%, Casi Ganas...
+      } else if (progress < 0.93) {
+        // Fase 2: Suspenso extremo... la aguja entra a 5% DESCUENTO y casi frena por completo
+        const norm = (progress - 0.74) / (0.93 - 0.74);
+        const ease = Math.sin(norm * (Math.PI / 2));
+        currentDeg = 2435 + ease * 68; // Se arrastra despacio de 2435 a 2503 deg (dentro de 5% DESCUENTO!)
+      } else {
+        // Fase 3: En el último instante, da el último clic y cruza a 75% DESCUENTO!
+        const norm = (progress - 0.93) / (1 - 0.93);
+        const ease = Math.pow(norm, 1.3);
+        currentDeg = 2503 + ease * 17; // Aterriza exactamente en 2520 deg (75% DESCUENTO)
+      }
 
-      if (currentPin !== lastPinIndex) {
-        lastPinIndex = currentPin;
+      setNeedleAngle(currentDeg);
+
+      // Determinar qué fatia está apuntando la aguja
+      const normalizedAngle = (currentDeg % 360 + 360) % 360;
+      const currentSlice = Math.floor((normalizedAngle + 22.5) / 45) % SLICES.length;
+      setActiveSliceIndex(currentSlice);
+
+      const pinIndex = Math.floor((currentDeg + 22.5) / 45);
+      if (pinIndex !== lastPinRef.current) {
+        lastPinRef.current = pinIndex;
         playTickSound();
         setPointerBounce(true);
-        setTimeout(() => setPointerBounce(false), 50);
+        setTimeout(() => setPointerBounce(false), 45);
       }
 
       if (progress < 1) {
-        animFrameRef.current = requestAnimationFrame(trackTicks);
+        animFrameRef.current = requestAnimationFrame(animateNeedle);
+      } else {
+        setNeedleAngle(2520);
+        setActiveSliceIndex(0);
+        setIsSpinning(false);
+        setStep("win_75");
+        playWinSound();
+        fireConfetti();
       }
     };
 
-    animFrameRef.current = requestAnimationFrame(trackTicks);
-
-    setTimeout(() => {
-      setIsSpinning(false);
-      setStep("win_75");
-      playWinSound();
-      fireConfetti();
-    }, spinDuration + 100);
+    animFrameRef.current = requestAnimationFrame(animateNeedle);
   };
 
   // Interceptar cierre para ofrecer la oferta de 8k
   const handleCloseAttempt = () => {
     if (step === "spin" || step === "win_75") {
-      // Abre la oferta ultra downsell de $8.000 COP
       setStep("downsell_8k");
       fireConfetti();
     } else {
-      // Si ya está en la oferta de 8k, cierra definitivamente
       setIsOpen(false);
     }
   };
@@ -299,7 +313,7 @@ export default function RuletaModal() {
 
   if (!isOpen) return null;
 
-  // Renderizar la Ruleta en formato SVG vectorial 100% confiable
+  // Renderizar la Ruleta con Seta Giratória en formato SVG vectorial
   const renderSvgWheel = () => {
     const center = 160;
     const radius = 145;
@@ -307,48 +321,54 @@ export default function RuletaModal() {
     const sliceAngleDeg = 360 / numSlices; // 45 deg
 
     return (
-      <svg
-        viewBox="0 0 320 320"
-        className="ruleta-svg-wheel"
-        style={{
-          transform: `rotate(${rotation}deg)`,
-          transition: isSpinning ? "transform 5.5s cubic-bezier(0.1, 0.9, 0.15, 1)" : "none",
-        }}
-      >
+      <svg viewBox="0 0 320 320" className="ruleta-svg-wheel">
         <defs>
           <radialGradient id="ruletaGoldHub" cx="40%" cy="40%" r="60%">
             <stop offset="0%" stopColor="#fff8db" />
             <stop offset="50%" stopColor="#e5ae52" />
             <stop offset="100%" stopColor="#a87114" />
           </radialGradient>
+          <linearGradient id="ruletaNeedleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#d4af37" />
+            <stop offset="50%" stopColor="#fff2a8" />
+            <stop offset="100%" stopColor="#aa820a" />
+          </linearGradient>
+          <filter id="ruletaNeedleShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="4" stdDeviation="4" floodOpacity="0.45" />
+          </filter>
         </defs>
 
-        {/* Borde exterior oscuro */}
+        {/* Borde exterior oscuro e aro dourado */}
         <circle cx={center} cy={center} r={radius + 10} fill="#211914" />
         <circle cx={center} cy={center} r={radius + 6} fill="none" stroke="#e5ae52" strokeWidth="5" />
 
-        {/* Fatias da Ruleta */}
+        {/* Fatias da Ruleta Fixas e Legíveis */}
         {SLICES.map((slice, i) => {
-          const thetaDeg = -90 + i * sliceAngleDeg;
-          const a1Rad = ((thetaDeg - 22.5) * Math.PI) / 180;
-          const a2Rad = ((thetaDeg + 22.5) * Math.PI) / 180;
+          const thetaDeg = i * sliceAngleDeg;
+          const a1Rad = ((thetaDeg - 22.5 - 90) * Math.PI) / 180;
+          const a2Rad = ((thetaDeg + 22.5 - 90) * Math.PI) / 180;
           const x1 = center + radius * Math.cos(a1Rad);
           const y1 = center + radius * Math.sin(a1Rad);
           const x2 = center + radius * Math.cos(a2Rad);
           const y2 = center + radius * Math.sin(a2Rad);
 
           const pathData = `M ${center} ${center} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${radius} ${radius} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
+          const isCurrentActive = activeSliceIndex === i;
 
           return (
             <g key={slice.text}>
               <path
                 d={pathData}
                 fill={slice.bgColor}
-                stroke="rgba(244, 240, 231, 0.35)"
-                strokeWidth="1.5"
+                stroke={isCurrentActive ? "#ffd54f" : "rgba(244, 240, 231, 0.35)"}
+                strokeWidth={isCurrentActive ? "3" : "1.5"}
+                style={{
+                  filter: isCurrentActive ? "brightness(1.15)" : "none",
+                  transition: "filter 0.1s ease",
+                }}
               />
               {/* Texto da fatia alinhado radialmente */}
-              <g transform={`rotate(${thetaDeg}, ${center}, ${center})`}>
+              <g transform={`rotate(${thetaDeg - 90}, ${center}, ${center})`}>
                 <text
                   x={center + radius - 14}
                   y={center + (slice.subtext ? 1 : 4)}
@@ -394,7 +414,29 @@ export default function RuletaModal() {
           );
         })}
 
-        {/* Centro da Ruleta (Buje dourado) */}
+        {/* SETA / AGULHA GIRATÓRIA CENTRAL QUE RODA E APONTA PARA OS DESCONTOS */}
+        <g
+          transform={`rotate(${needleAngle}, ${center}, ${center})`}
+          filter="url(#ruletaNeedleShadow)"
+        >
+          {/* Corpo da Seta */}
+          <path
+            d={`M ${center - 9} ${center} L ${center} 40 L ${center + 9} ${center} L ${center} ${center + 18} Z`}
+            fill="url(#ruletaNeedleGrad)"
+            stroke="#211914"
+            strokeWidth="2"
+          />
+          {/* Brilho interno da seta */}
+          <path
+            d={`M ${center - 4} ${center} L ${center} 46 L ${center + 4} ${center} Z`}
+            fill="#ffffff"
+            opacity="0.6"
+          />
+          {/* Ponta vermelha da seta */}
+          <circle cx={center} cy="48" r="5" fill="#ff1744" stroke="#fff" strokeWidth="1.2" />
+        </g>
+
+        {/* Centro da Ruleta (Buje dourado central) */}
         <circle cx={center} cy={center} r="26" fill="url(#ruletaGoldHub)" stroke="#211914" strokeWidth="2.5" />
         <circle cx={center} cy={center} r="12" fill="#c15542" />
       </svg>
@@ -432,22 +474,8 @@ export default function RuletaModal() {
               Tienes <strong>1 oportunidad exclusiva</strong> para desbloquear un beneficio único en la Colección Completa de Conservas Caseras.
             </p>
 
-            {/* Contenedor de la Ruleta SVG */}
+            {/* Contenedor de la Ruleta SVG com a Seta Rodando */}
             <div className="ruleta-wheel-wrapper">
-              {/* Puntero Indicador */}
-              <div className={`ruleta-pointer ${pointerBounce ? "bounce" : ""}`}>
-                <svg viewBox="0 0 32 40" width="36" height="44">
-                  <path
-                    d="M16 40 L0 10 C0 4.5 7.2 0 16 0 C24.8 0 32 4.5 32 10 Z"
-                    fill="#e5ae52"
-                    stroke="#211914"
-                    strokeWidth="3"
-                  />
-                  <circle cx="16" cy="12" r="5" fill="#c15542" />
-                </svg>
-              </div>
-
-              {/* Render do SVG da Ruleta com rotação */}
               <div className="ruleta-canvas-container">
                 {renderSvgWheel()}
               </div>
@@ -471,7 +499,7 @@ export default function RuletaModal() {
               disabled={isSpinning}
               className={`button ruleta-cta-spin-btn ${isSpinning ? "spinning" : "pulse-glow"}`}
             >
-              <span>{isSpinning ? "¡Girando la ruleta de la suerte..." : "👉 TOCAR AQUÍ PARA GIRAR LA RULETA"}</span>
+              <span>{isSpinning ? "¡La aguja está girando..." : "👉 TOCAR AQUÍ PARA GIRAR LA RULETA"}</span>
               {!isSpinning && <b aria-hidden="true">🎰</b>}
             </button>
 
