@@ -492,65 +492,28 @@ details>p { max-width:720px; margin:0 0 28px 62px; color:#6a6058; line-height:1.
   box-shadow:0 4px 20px rgba(33,25,20,.04);
 }
 
-/* Official Account Verification Box */
-.account-verified-box {
-  background:linear-gradient(135deg, rgba(20,93,61,.08) 0%, rgba(20,93,61,.02) 100%);
-  border:1.5px solid rgba(20,93,61,.25);
-  border-radius:8px;
-  padding:18px 20px;
-  margin-bottom:28px;
-}
-.account-verified-header {
+/* Titular Strip */
+.account-holder-strip {
   display:flex;
   align-items:center;
-  gap:14px;
-}
-.verified-shield-icon {
-  width:42px;
-  height:42px;
-  border-radius:50%;
-  background:var(--forest);
-  color:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  flex-shrink:0;
-  box-shadow:0 2px 8px rgba(20,93,61,.25);
-}
-.verified-pill {
-  display:inline-block;
-  background:#145d3d;
-  color:#ffffff;
-  font-size:10px;
-  font-weight:700;
-  text-transform:uppercase;
-  letter-spacing:.12em;
-  padding:3px 8px;
-  border-radius:4px;
-  margin-bottom:4px;
-}
-.account-holder-name {
-  margin:0 0 2px;
-  font-size:15px;
+  gap:8px;
+  background:rgba(20,93,61,.06);
+  border:1px solid rgba(20,93,61,.18);
+  border-radius:6px;
+  padding:10px 16px;
+  margin-bottom:20px;
+  font-size:14px;
   color:var(--ink);
 }
-.account-holder-name strong {
-  font-size:17px;
-  color:var(--forest);
-}
-.account-holder-role {
-  margin:0;
-  font-size:12px;
+.account-holder-strip span {
   color:#6f655e;
+  font-size:13px;
 }
-.account-verified-note {
-  margin-top:12px;
-  padding-top:10px;
-  border-top:1px dashed rgba(20,93,61,.2);
-  font-size:12px;
-  color:#426b53;
-  line-height:1.45;
+.account-holder-strip strong {
+  color:var(--forest);
+  font-weight:700;
 }
+
 
 /* Payment Method Tabs */
 .payment-tabs-header {
@@ -1514,6 +1477,33 @@ details>p { max-width:720px; margin:0 0 28px 62px; color:#6a6058; line-height:1.
   line-height:1.55;
   border-top:1px dashed var(--line);
   padding-top:10px;
+}
+
+/* Bottom Scroll Action CTA */
+.checkout-bottom-cta-wrap {
+  display:flex;
+  justify-content:center;
+  margin-top:36px;
+}
+.checkout-bottom-action-btn {
+  min-height:56px;
+  padding:0 36px;
+  font-size:14px;
+  font-weight:700;
+  letter-spacing:.15em;
+  background:var(--forest);
+  color:#fff;
+  border-radius:6px;
+  box-shadow:0 4px 16px rgba(20,93,61,.25);
+  cursor:pointer;
+  border:none;
+  transition:all .25s ease;
+  width:min(440px, 100%);
+}
+.checkout-bottom-action-btn:hover {
+  background:var(--terra);
+  transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(218,98,66,.3);
 }
 
 /* Global Bottom Trust */
