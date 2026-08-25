@@ -37,8 +37,23 @@ function CheckoutClientInternal({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Detectar cupones de descuento
-  const is8kDiscount = edition === "completa" && (searchParams.get("descuento") === "8k" || searchParams.get("descuento") === "8000" || searchParams.get("promo") === "8k");
+  // Detectar cupones de descuento (com persistência em sessionStorage para celular)
+  const param8k = edition === "completa" && (searchParams.get("descuento") === "8k" || searchParams.get("descuento") === "8000" || searchParams.get("promo") === "8k");
+  const [is8kDiscount, setIs8kDiscount] = useState(param8k);
+
+  useEffect(() => {
+    if (param8k) {
+      try { sessionStorage.setItem("conservas_promo_8k", "true"); } catch {}
+      setIs8kDiscount(true);
+    } else if (typeof window !== "undefined" && edition === "completa") {
+      try {
+        if (sessionStorage.getItem("conservas_promo_8k") === "true") {
+          setIs8kDiscount(true);
+        }
+      } catch {}
+    }
+  }, [param8k, edition]);
+
   const is75Discount = !is8kDiscount && edition === "completa" && (searchParams.get("descuento") === "75" || searchParams.get("promo") === "75");
   const isDiscounted = is8kDiscount || is75Discount;
 

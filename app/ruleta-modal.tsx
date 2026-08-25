@@ -588,8 +588,8 @@ export default function RuletaModal({ disabled = false }: RuletaModalProps) {
       <canvas ref={confettiCanvasRef} className="ruleta-confetti-canvas" />
 
       <div className="ruleta-modal-card paper">
-        {/* Botão de fechar (escondido na etapa de 2º giro) */}
-        {step !== "spin_2_prompt" && (
+        {/* Botão de fechar (escondido na etapa de 2º giro e no prêmio de $8.000) */}
+        {step !== "spin_2_prompt" && step !== "win_8k" && (
           <button
             type="button"
             onClick={handleReject75OrClose}
@@ -887,19 +887,11 @@ export default function RuletaModal({ disabled = false }: RuletaModalProps) {
               <b aria-hidden="true">→</b>
             </a>
 
-            <div className="ruleta-trust-row">
+            <div className="ruleta-trust-row" style={{ marginTop: "14px", marginBottom: "4px" }}>
               <span>♢ Pago Seguro</span>
               <span>⚡ Acceso Inmediato</span>
               <span>↻ Garantía 30 Días</span>
             </div>
-
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="ruleta-dismiss-link"
-            >
-              No gracias, renuncio a la colección y a los 7 bonos por $8.000 COP
-            </button>
           </div>
         )}
       </div>

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 interface UrgencyModalProps {
   disabled?: boolean;
@@ -19,49 +19,39 @@ export default function UrgencyModal({ disabled, onFinalize }: UrgencyModalProps
     return () => clearInterval(timer);
   }, [isOpen]);
 
-  // Backredirect & Exit Intent Setup (Impede voltar e abre o modal de tempo esgotando)
+  // Backredirect & Exit Intent Setup (Impede voltar no celular e abre o modal de urgência)
   useEffect(() => {
     if (typeof window === "undefined" || disabled) return;
 
-    let isInternalNav = false;
-
-    // Detectar cliques em links internos para não disparar
-    const handleLinkClick = (e: MouseEvent) => {
-      const target = (e.target as HTMLElement).closest("a, button");
-      if (target) {
-        isInternalNav = true;
-        setTimeout(() => { isInternalNav = false; }, 1000);
-      }
-    };
-    document.addEventListener("click", handleLinkClick, true);
-
-    // Inserir estado no histórico e reforçar
+    // Inserir múltiplos estados no histórico para criar uma barreira intransponível
     const pushBackState = () => {
       try {
-        window.history.pushState({ isBackBlocked: true, time: Date.now() }, "", window.location.href);
+        window.history.pushState({ isBackBlocked: true, t: Date.now() }, "", window.location.href);
       } catch {}
     };
 
+    // Push inicial duplo
     pushBackState();
+    setTimeout(pushBackState, 150);
 
-    const armOnTouch = () => { pushBackState(); };
-    window.addEventListener("touchstart", armOnTouch, { passive: true, once: true });
-    window.addEventListener("scroll", armOnTouch, { passive: true, once: true });
+    // No iPhone (iOS Safari) e Android, reforça a barreira ao primeiro toque/scroll/clique
+    const armTrigger = () => {
+      pushBackState();
+    };
 
-    // Interceptar o botão voltar do navegador / celular
+    window.addEventListener("touchstart", armTrigger, { passive: true });
+    window.addEventListener("scroll", armTrigger, { passive: true });
+    window.addEventListener("click", armTrigger, { passive: true });
+
+    // Interceptar o botão voltar do celular (Android e iOS Safari)
     const handlePopState = (e: PopStateEvent) => {
       e?.preventDefault?.();
-      if (isInternalNav) {
-        isInternalNav = false;
-        pushBackState();
-        return;
-      }
       setIsOpen(true);
       pushBackState();
     };
     window.addEventListener("popstate", handlePopState);
 
-    // BFCache do Safari no iOS
+    // BFCache do Safari no iOS (gesto de swipe para voltar)
     const handlePageShow = (e: PageTransitionEvent) => {
       if (e.persisted) {
         pushBackState();
@@ -70,7 +60,7 @@ export default function UrgencyModal({ disabled, onFinalize }: UrgencyModalProps
     };
     window.addEventListener("pageshow", handlePageShow);
 
-    // Exit Intent no Desktop
+    // Exit Intent no Desktop (mouse saindo pelo topo)
     const handleMouseLeave = (e: MouseEvent) => {
       if (e.clientY <= 8) {
         setIsOpen(true);
@@ -79,9 +69,9 @@ export default function UrgencyModal({ disabled, onFinalize }: UrgencyModalProps
     document.addEventListener("mouseleave", handleMouseLeave);
 
     return () => {
-      document.removeEventListener("click", handleLinkClick, true);
-      window.removeEventListener("touchstart", armOnTouch);
-      window.removeEventListener("scroll", armOnTouch);
+      window.removeEventListener("touchstart", armTrigger);
+      window.removeEventListener("scroll", armTrigger);
+      window.removeEventListener("click", armTrigger);
       window.removeEventListener("popstate", handlePopState);
       window.removeEventListener("pageshow", handlePageShow);
       document.removeEventListener("mouseleave", handleMouseLeave);
@@ -100,7 +90,10 @@ export default function UrgencyModal({ disabled, onFinalize }: UrgencyModalProps
       onFinalize();
     } else {
       // Rolar suavemente até as instruções de pagamento
-      const paymentSection = document.querySelector(".payment-instructions-box") || document.querySelector(".upload-section-wrapper");
+      const paymentSection =
+        document.querySelector(".payment-instructions-box") ||
+        document.querySelector(".upload-section-wrapper") ||
+        document.querySelector(".checkout-payment-wrapper");
       if (paymentSection) {
         paymentSection.scrollIntoView({ behavior: "smooth", block: "center" });
       }
@@ -151,13 +144,13 @@ export default function UrgencyModal({ disabled, onFinalize }: UrgencyModalProps
           </div>
         </div>
 
-        {/* CTA Principal */}
+        {/* CTA Principal - NÃO há botão para sair ou recusar */}
         <button
           type="button"
           onClick={handleAction}
           className="urgency-cta-btn button"
         >
-          <span>¡Finalizar mi pago ahora por $8.000 COP!</span>
+          <span>👉 ¡FINALIZAR MI PAGO AHORA POR $8.000 COP!</span>
           <b aria-hidden="true">→</b>
         </button>
 
