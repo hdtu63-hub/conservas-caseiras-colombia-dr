@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface UrgencyModalProps {
   disabled?: boolean;
@@ -9,6 +9,7 @@ interface UrgencyModalProps {
 export default function UrgencyModal({ disabled, onFinalize }: UrgencyModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(180); // 3 minutos de urgência
+  const hasTriggeredRef = useRef(false);
 
   // Countdown timer
   useEffect(() => {
@@ -19,29 +20,27 @@ export default function UrgencyModal({ disabled, onFinalize }: UrgencyModalProps
     return () => clearInterval(timer);
   }, [isOpen]);
 
-  // Backredirect & Exit Intent Setup (Impede voltar no celular e abre o modal de urgência)
+  // Backredirect & Exit Intent Setup (Compatível com Next.js, iPhone iOS Safari e Android)
   useEffect(() => {
     if (typeof window === "undefined" || disabled) return;
 
-    // Inserir múltiplos estados no histórico para criar uma barreira intransponível
+    // Inserir estado no histórico preservando o objeto de estado interno do Next.js
     const pushBackState = () => {
       try {
-        window.history.pushState({ isBackBlocked: true, t: Date.now() }, "", window.location.href);
+        const curState = window.history.state || {};
+        window.history.pushState({ ...curState, isBackBlocked: true }, "", window.location.href);
       } catch {}
     };
 
-    // Push inicial duplo
     pushBackState();
-    setTimeout(pushBackState, 150);
 
-    // No iPhone (iOS Safari) e Android, reforça a barreira ao primeiro toque/scroll/clique
-    const armTrigger = () => {
+    // No iPhone (iOS Safari) e Android, reforça a barreira ao primeiro toque
+    const armOnTouch = () => {
       pushBackState();
     };
 
-    window.addEventListener("touchstart", armTrigger, { passive: true });
-    window.addEventListener("scroll", armTrigger, { passive: true });
-    window.addEventListener("click", armTrigger, { passive: true });
+    window.addEventListener("touchstart", armOnTouch, { passive: true, once: true });
+    window.addEventListener("scroll", armOnTouch, { passive: true, once: true });
 
     // Interceptar o botão voltar do celular (Android e iOS Safari)
     const handlePopState = (e: PopStateEvent) => {
@@ -62,16 +61,16 @@ export default function UrgencyModal({ disabled, onFinalize }: UrgencyModalProps
 
     // Exit Intent no Desktop (mouse saindo pelo topo)
     const handleMouseLeave = (e: MouseEvent) => {
-      if (e.clientY <= 8) {
+      if (e.clientY <= 8 && !hasTriggeredRef.current) {
+        hasTriggeredRef.current = true;
         setIsOpen(true);
       }
     };
     document.addEventListener("mouseleave", handleMouseLeave);
 
     return () => {
-      window.removeEventListener("touchstart", armTrigger);
-      window.removeEventListener("scroll", armTrigger);
-      window.removeEventListener("click", armTrigger);
+      window.removeEventListener("touchstart", armOnTouch);
+      window.removeEventListener("scroll", armOnTouch);
       window.removeEventListener("popstate", handlePopState);
       window.removeEventListener("pageshow", handlePageShow);
       document.removeEventListener("mouseleave", handleMouseLeave);

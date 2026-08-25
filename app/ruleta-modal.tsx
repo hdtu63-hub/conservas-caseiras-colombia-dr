@@ -43,15 +43,6 @@ export default function RuletaModal({ disabled = false }: RuletaModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
   const [step, setStep] = useState<"spin_1" | "win_75" | "spin_2_prompt" | "win_8k">("spin_1");
-
-  // Se o desconto de 8k já estiver ativo na URL ou sessão, a roleta fica 100% desativada
-  const is8kActive =
-    typeof window !== "undefined" &&
-    (window.location.search.includes("8k") ||
-      window.location.search.includes("8000") ||
-      sessionStorage.getItem("conservas_promo_8k") === "true");
-
-  const isEffectivelyDisabled = disabled || is8kActive;
   const [needleAngle, setNeedleAngle] = useState(0); // Começa em BONO EXTRA (0° às 12h)
   const [activeSliceIndex, setActiveSliceIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutos
@@ -213,7 +204,11 @@ export default function RuletaModal({ disabled = false }: RuletaModalProps) {
 
   // Backredirect & Exit Intent Setup (Compatível com iPhone iOS Safari e Android)
   useEffect(() => {
-    if (typeof window === "undefined" || isEffectivelyDisabled) return;
+    if (typeof window === "undefined" || disabled) return;
+
+    try {
+      if (window.location.search.includes("8k") || window.location.search.includes("8000")) return;
+    } catch {}
 
     // Flag para ignorar navigações internas (hash links, checkout, etc.)
     let isInternalNav = false;
@@ -238,10 +233,11 @@ export default function RuletaModal({ disabled = false }: RuletaModalProps) {
     };
     document.addEventListener("click", handleLinkClick, true);
 
-    // 2. Inserir estado no histórico e reforçar ao primeiro toque
+    // 2. Inserir estado no histórico e reforçar ao primeiro toque preservando state do Next.js
     const pushBackState = () => {
       try {
-        window.history.pushState({ isBackBlocked: true, time: Date.now() }, "", window.location.href);
+        const curState = window.history.state || {};
+        window.history.pushState({ ...curState, isBackBlocked: true }, "", window.location.href);
       } catch {}
     };
 
@@ -275,9 +271,10 @@ export default function RuletaModal({ disabled = false }: RuletaModalProps) {
     };
     window.addEventListener("pageshow", handlePageShow);
 
-    // 5. Exit Intent no Desktop (cursor saindo pelo topo)
+    // 5. Exit Intent no Desktop (mouse saindo pelo topo da janela)
     const handleMouseLeave = (e: MouseEvent) => {
-      if (e.clientY <= 8) {
+      if (e.clientY <= 8 && !hasTriggeredRef.current) {
+        hasTriggeredRef.current = true;
         setIsOpen(true);
       }
     };
@@ -444,7 +441,7 @@ export default function RuletaModal({ disabled = false }: RuletaModalProps) {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  if (!isOpen || isEffectivelyDisabled) return null;
+  if (!isOpen || disabled) return null;
 
   // Renderizar a Ruleta SVG com a agulha
   const renderSvgWheel = () => {
