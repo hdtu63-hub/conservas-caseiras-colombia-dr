@@ -60,6 +60,9 @@ const testimonials = [
   ["/images/testimonials/04-fernanda.jpg", "Fernanda Ríos", "Barranquilla · Colombia", "Me encantaron las recetas de pimentones y ajíes. Quedan deliciosas, se ven hermosas en el frasco y varias personas ya me preguntaron si las vendo."],
   ["/images/testimonials/05-beatriz.jpg", "Beatriz Álvarez", "Cartagena · Colombia", "Nunca había preparado conservas y pensé que iba a ser complicado. Pero empecé con las recetas para principiantes y pude seguir todo sin problema. Ya tengo varios frascos listos en mi cocina."],
   ["/images/testimonials/06-ana.jpg", "Ana Rodríguez", "Bucaramanga · Colombia", "Lo que más me gustó es que no es solo un recetario. También aprendí sobre almacenamiento, etiquetas y venta. Me ahorró muchísimo tiempo de búsqueda y pruebas por mi cuenta."],
+  ["/images/testimonials/07-diana.jpg", "Diana Emprende", "Pereira · Colombia", "Comencé pensando en ganar un dinerito extra y ahora tengo clientes que vuelven a pedirme. Hay días en que preparo y ya tengo varios frascos encargados antes de terminarlos."],
+  ["/images/testimonials/08-laura.jpg", "Laura Gómez", "Manizales · Colombia", "Se me dañaban muchas verduras en la casa y terminaba botándolas. Con el material aprendí a aprovecharlas haciendo conservas para toda mi familia."],
+  ["/images/testimonials/09-sandra.jpg", "Sandra Milena Rojas", "Ibagué · Colombia", "Yo creía que para empezar necesitaba máquinas y equipos especiales. Al final pude hacer mis primeras conservas con lo que ya tenía en mi cocina."],
 ];
 
 const faqs = [
