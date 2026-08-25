@@ -57,9 +57,9 @@ const testimonials = [
   ["/images/testimonials/01-carolina.jpg", "Carolina Méndez", "Bogotá · Colombia", "Nunca había hecho conservas y me daba miedo el tema de la esterilización. Empecé con la mermelada de fresa y me salió muy bien. La explicación está tan clara que me dio seguridad desde el primer frasco."],
   ["/images/testimonials/02-paula.jpg", "Paula Santos", "Medellín · Colombia", "Comencé con tres recetas para probar en casa y terminé preparando frascos para mi familia y mis vecinas. Todo está explicado de forma sencilla y fácil de seguir."],
   ["/images/testimonials/03-mariana.jpg", "Mariana Castro", "Cali · Colombia", "La tabla de costos fue lo que más me ayudó. Yo sabía preparar, pero no sabía cuánto cobrar. Ahora ya tengo claro cuánto gasto, cuánto gano y cómo ponerle precio a cada frasco."],
-  ["/images/testimonials/04-fernanda.jpg", "Fernanda Lima", "Quito · Ecuador", "Me encantaron las recetas de pimentones y ajíes. Quedan deliciosas, se ven hermosas en el frasco y varias personas ya me preguntaron si las vendo."],
-  ["/images/testimonials/05-beatriz.jpg", "Beatriz Álvarez", "Puebla · México", "Nunca había preparado conservas y pensé que iba a ser complicado. Pero empecé con las recetas para principiantes y pude seguir todo sin problema. Ya tengo varios frascos listos en mi cocina."],
-  ["/images/testimonials/06-ana.jpg", "Ana Rodríguez", "Lima · Perú", "Lo que más me gustó es que no es solo un recetario. También aprendí sobre almacenamiento, etiquetas y venta. Me ahorró muchísimo tiempo de búsqueda y pruebas por mi cuenta."],
+  ["/images/testimonials/04-fernanda.jpg", "Fernanda Ríos", "Barranquilla · Colombia", "Me encantaron las recetas de pimentones y ajíes. Quedan deliciosas, se ven hermosas en el frasco y varias personas ya me preguntaron si las vendo."],
+  ["/images/testimonials/05-beatriz.jpg", "Beatriz Álvarez", "Cartagena · Colombia", "Nunca había preparado conservas y pensé que iba a ser complicado. Pero empecé con las recetas para principiantes y pude seguir todo sin problema. Ya tengo varios frascos listos en mi cocina."],
+  ["/images/testimonials/06-ana.jpg", "Ana Rodríguez", "Bucaramanga · Colombia", "Lo que más me gustó es que no es solo un recetario. También aprendí sobre almacenamiento, etiquetas y venta. Me ahorró muchísimo tiempo de búsqueda y pruebas por mi cuenta."],
 ];
 
 const faqs = [

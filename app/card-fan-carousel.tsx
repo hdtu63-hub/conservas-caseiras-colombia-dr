@@ -239,25 +239,36 @@ export default function CardFanCarousel({ cards }: SocialCardsProps) {
         </div>
       </div>
 
-      {needsPagination && (
-        <div className="fan-carousel-controls">
-          <button className="fan-arrow-btn" onClick={() => cycle("left")} aria-label="Anterior">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-          <div className="fan-dots">
-            {cards.map((_, i) => (
-              <span key={i} className={`fan-dot ${i === centerIndex ? "fan-dot-active" : ""}`} />
-            ))}
-          </div>
-          <button className="fan-arrow-btn" onClick={() => cycle("right")} aria-label="Siguiente">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
+      {/* Controles sempre visíveis, como no modelo de referência */}
+      <div className="fan-carousel-controls">
+        <button
+          className="fan-arrow-btn"
+          onClick={() => cycle("left")}
+          aria-label="Anterior"
+          disabled={!needsPagination}
+          style={{ opacity: needsPagination ? 1 : 0.35 }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+        <div className="fan-dots">
+          {cards.map((_, i) => (
+            <span key={i} className={`fan-dot ${i === centerIndex ? "fan-dot-active" : ""}`} />
+          ))}
         </div>
-      )}
+        <button
+          className="fan-arrow-btn"
+          onClick={() => cycle("right")}
+          aria-label="Siguiente"
+          disabled={!needsPagination}
+          style={{ opacity: needsPagination ? 1 : 0.35 }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
+      </div>
     </div>
   );
 }

@@ -206,7 +206,30 @@ export default function RuletaModal({ disabled = false }: RuletaModalProps) {
   useEffect(() => {
     if (typeof window === "undefined" || disabled) return;
 
-    // 1. Inserir estado no histórico imediatamente e reforçar ao primeiro toque
+    // Flag para ignorar navigações internas (hash links, checkout, etc.)
+    let isInternalNav = false;
+
+    // 1. Detectar cliques em links internos para NÃO abrir a roleta
+    const handleLinkClick = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest("a");
+      if (target && target.href) {
+        try {
+          const url = new URL(target.href, window.location.href);
+          // Links de hash (rolagem), checkout ou mesma página são navegação interna
+          if (
+            target.href.includes("#") ||
+            url.pathname === window.location.pathname ||
+            url.pathname.startsWith("/checkout")
+          ) {
+            isInternalNav = true;
+            setTimeout(() => { isInternalNav = false; }, 1000);
+          }
+        } catch {}
+      }
+    };
+    document.addEventListener("click", handleLinkClick, true);
+
+    // 2. Inserir estado no histórico e reforçar ao primeiro toque
     const pushBackState = () => {
       try {
         window.history.pushState({ isBackBlocked: true, time: Date.now() }, "", window.location.href);
@@ -215,25 +238,26 @@ export default function RuletaModal({ disabled = false }: RuletaModalProps) {
 
     pushBackState();
 
-    // No iPhone (iOS Safari), eventos de touch/scroll ativam a pilha de histórico com segurança
-    const armTrigger = () => {
-      pushBackState();
-    };
+    // No iPhone (iOS Safari), touchstart/scroll armam o histórico
+    const armOnTouch = () => { pushBackState(); };
+    window.addEventListener("touchstart", armOnTouch, { passive: true, once: true });
+    window.addEventListener("scroll", armOnTouch, { passive: true, once: true });
 
-    window.addEventListener("touchstart", armTrigger, { passive: true, once: true });
-    window.addEventListener("scroll", armTrigger, { passive: true, once: true });
-    window.addEventListener("click", armTrigger, { passive: true, once: true });
-
-    // 2. Interceptar o botão voltar do navegador / celular
+    // 3. Interceptar botão voltar do navegador / celular
     const handlePopState = (e: PopStateEvent) => {
       e?.preventDefault?.();
+      // Ignorar se foi uma navegação interna (hash, checkout, etc.)
+      if (isInternalNav) {
+        isInternalNav = false;
+        pushBackState();
+        return;
+      }
       setIsOpen(true);
       pushBackState();
     };
-
     window.addEventListener("popstate", handlePopState);
 
-    // 3. Suporte ao BFCache do Safari no iOS (ao voltar por gesto de swipe)
+    // 4. Suporte ao BFCache do Safari no iOS (swipe lateral)
     const handlePageShow = (e: PageTransitionEvent) => {
       if (e.persisted) {
         pushBackState();
@@ -242,7 +266,7 @@ export default function RuletaModal({ disabled = false }: RuletaModalProps) {
     };
     window.addEventListener("pageshow", handlePageShow);
 
-    // 4. Exit Intent no Desktop (cursor saindo pelo topo)
+    // 5. Exit Intent no Desktop (cursor saindo pelo topo)
     const handleMouseLeave = (e: MouseEvent) => {
       if (e.clientY <= 8) {
         setIsOpen(true);
@@ -250,16 +274,14 @@ export default function RuletaModal({ disabled = false }: RuletaModalProps) {
     };
     document.addEventListener("mouseleave", handleMouseLeave);
 
-    // 5. Custom Event para abrir programaticamente
-    const handleCustomOpen = () => {
-      setIsOpen(true);
-    };
+    // 6. Custom Event para abrir programaticamente
+    const handleCustomOpen = () => { setIsOpen(true); };
     window.addEventListener("open-ruleta-modal", handleCustomOpen);
 
     return () => {
-      window.removeEventListener("touchstart", armTrigger);
-      window.removeEventListener("scroll", armTrigger);
-      window.removeEventListener("click", armTrigger);
+      document.removeEventListener("click", handleLinkClick, true);
+      window.removeEventListener("touchstart", armOnTouch);
+      window.removeEventListener("scroll", armOnTouch);
       window.removeEventListener("popstate", handlePopState);
       window.removeEventListener("pageshow", handlePageShow);
       document.removeEventListener("mouseleave", handleMouseLeave);
