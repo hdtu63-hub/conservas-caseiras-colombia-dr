@@ -5,14 +5,14 @@ import RuletaModal from "./ruleta-modal";
 import CardFanCarousel from "./card-fan-carousel";
 
 const SOCIAL_CARDS = [
+  { imgUrl: "/images/testimonials/08-laura.jpg", alt: "Laura Gómez — aprovecho las verduras haciendo conservas para toda mi familia" },
+  { imgUrl: "/images/testimonials/07-diana.jpg", alt: "Diana Emprende — clientes que vuelven a pedirme frascos encargados" },
   { imgUrl: "/images/social/01-marthalucia.jpg", alt: "Martha Lucía Pérez — conservas en ensaladas, carnes y desayunos" },
+  { imgUrl: "/images/testimonials/09-sandra.jpg", alt: "Sandra Milena Rojas — primeras conservas con lo que tenía en casa" },
   { imgUrl: "/images/social/02-mafe.jpg", alt: "Mafe cocina fácil — ingredientes sencillos que ya compro" },
-  { imgUrl: "/images/social/03-yuli.jpg", alt: "Yuli casera — recetas prácticas para el fin de semana" },
   { imgUrl: "/images/social/04-cataideas.jpg", alt: "Cata ideas en casa — videos, guías y bonos" },
   { imgUrl: "/images/social/05-paola.jpg", alt: "Paola Ramírez — preparo y conservo correctamente" },
-  { imgUrl: "/images/testimonials/07-diana.jpg", alt: "Diana Emprende — clientes que vuelven a pedirme" },
-  { imgUrl: "/images/testimonials/08-laura.jpg", alt: "Laura Gómez — aprovecho las verduras haciendo conservas" },
-  { imgUrl: "/images/testimonials/09-sandra.jpg", alt: "Sandra Milena Rojas — primeras conservas con lo que tenía en casa" },
+  { imgUrl: "/images/social/03-yuli.jpg", alt: "Yuli casera — recetas prácticas para el fin de semana" },
 ];
 
 const benefits = [
