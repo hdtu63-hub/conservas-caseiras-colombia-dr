@@ -10,6 +10,9 @@ const SOCIAL_CARDS = [
   { imgUrl: "/images/social/03-yuli.jpg", alt: "Yuli casera — recetas prácticas para el fin de semana" },
   { imgUrl: "/images/social/04-cataideas.jpg", alt: "Cata ideas en casa — videos, guías y bonos" },
   { imgUrl: "/images/social/05-paola.jpg", alt: "Paola Ramírez — preparo y conservo correctamente" },
+  { imgUrl: "/images/testimonials/07-diana.jpg", alt: "Diana Emprende — clientes que vuelven a pedirme" },
+  { imgUrl: "/images/testimonials/08-laura.jpg", alt: "Laura Gómez — aprovecho las verduras haciendo conservas" },
+  { imgUrl: "/images/testimonials/09-sandra.jpg", alt: "Sandra Milena Rojas — primeras conservas con lo que tenía en casa" },
 ];
 
 const benefits = [
@@ -60,9 +63,6 @@ const testimonials = [
   ["/images/testimonials/04-fernanda.jpg", "Fernanda Ríos", "Barranquilla · Colombia", "Me encantaron las recetas de pimentones y ajíes. Quedan deliciosas, se ven hermosas en el frasco y varias personas ya me preguntaron si las vendo."],
   ["/images/testimonials/05-beatriz.jpg", "Beatriz Álvarez", "Cartagena · Colombia", "Nunca había preparado conservas y pensé que iba a ser complicado. Pero empecé con las recetas para principiantes y pude seguir todo sin problema. Ya tengo varios frascos listos en mi cocina."],
   ["/images/testimonials/06-ana.jpg", "Ana Rodríguez", "Bucaramanga · Colombia", "Lo que más me gustó es que no es solo un recetario. También aprendí sobre almacenamiento, etiquetas y venta. Me ahorró muchísimo tiempo de búsqueda y pruebas por mi cuenta."],
-  ["/images/testimonials/07-diana.jpg", "Diana Emprende", "Pereira · Colombia", "Comencé pensando en ganar un dinerito extra y ahora tengo clientes que vuelven a pedirme. Hay días en que preparo y ya tengo varios frascos encargados antes de terminarlos."],
-  ["/images/testimonials/08-laura.jpg", "Laura Gómez", "Manizales · Colombia", "Se me dañaban muchas verduras en la casa y terminaba botándolas. Con el material aprendí a aprovecharlas haciendo conservas para toda mi familia."],
-  ["/images/testimonials/09-sandra.jpg", "Sandra Milena Rojas", "Ibagué · Colombia", "Yo creía que para empezar necesitaba máquinas y equipos especiales. Al final pude hacer mis primeras conservas con lo que ya tenía en mi cocina."],
 ];
 
 const faqs = [
@@ -133,7 +133,7 @@ export default function Home() {
       <Offer edition="Edición completa" title="Colección Completa de Conservas" price="$28.000" oldPrice="$167.000" priceNote="Solo $8.000 más que la Edición Esencial" href="/checkout/completa" buttonLabel="Quiero todo por $28.000" featured features={["Todo lo incluido en la Edición Esencial", "Videoclases paso a paso", "Recetas de pimentones y ajíes artesanales", "Tabla práctica de costos y precios", "Guías para vender tus conservas", "Materiales sobre precios y ganancias", "Acceso de por vida"]} bonuses={["Manual de etiquetas para conservas", "Guía Ganancias en un Frasco", "Mermeladas Artesanales", "Guía práctica de conservación"]}/>
     </div><div className="pricing-notes"><strong>Ambas las ediciones son de pago único y tienen acceso de por vida.</strong><span>Además, cuentas con 30 días para probar el material.</span></div></div></section>
 
-    <section className="testimonials section paper"><div className="container"><h2>Lo que dicen quienes ya empezaron a <em>preparar sus conservas.</em></h2><div className="testimonial-grid">{testimonials.map(([photo, name, location, quote]) => <figure key={name}><figcaption><Image className="avatar" src={photo} alt={`Foto de ${name}`} width={46} height={46} /><div><strong>{name}</strong><span>{location}</span></div></figcaption><blockquote>{quote}</blockquote><div className="stars" aria-label="5 de 5 estrellas">★★★★★</div></figure>)}</div><div className="center-action"><ArrowButton href="#ofertas">Quiero empezar hoy</ArrowButton></div></div></section>
+    <section className="testimonials section paper"><div className="container"><h2>Lo que dicen quienes ya empezaron a <em>preparar sus conservas.</em></h2><div className="testimonial-track-wrapper"><div className="testimonial-track">{testimonials.map(([photo, name, location, quote]) => <figure key={name}><figcaption><Image className="avatar" src={photo} alt={`Foto de ${name}`} width={64} height={64} /><div><strong>{name}</strong><span>{location}</span></div></figcaption><blockquote>{quote}</blockquote><div className="stars" aria-label="5 de 5 estrellas">★★★★★</div></figure>)}</div></div><div className="center-action"><ArrowButton href="#ofertas">Quiero empezar hoy</ArrowButton></div></div></section>
 
     <section className="faq section paper"><div className="narrow"><p className="eyebrow">Antes de empezar</p><h2>Preguntas <em>frecuentes.</em></h2><div className="faq-list">{faqs.map(([question, answer], i) => <details key={question}><summary><span>{String(i + 1).padStart(2, "0")}</span><strong>{question}</strong><b aria-hidden="true">+</b></summary><p>{answer}</p></details>)}</div><div className="center-action"><ArrowButton href="#ofertas">Quiero mis recetas ahora</ArrowButton></div></div></section>
 
