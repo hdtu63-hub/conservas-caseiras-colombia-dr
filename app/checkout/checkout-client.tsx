@@ -255,7 +255,29 @@ export default function CheckoutClient({
           {/* LEFT COLUMN: Payment details and Upload */}
           <div className="checkout-left">
             <div className="checkout-card main-payment-card" id="seccion-pago">
-              {/* 1. Payment Method Selector Tabs FIRST */}
+              {/* Account Holder Transparency Box */}
+              <div className="account-verified-box">
+                <div className="account-verified-header">
+                  <div className="verified-shield-icon">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                      <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="account-holder-name">
+                      Titular: <strong>Juan Arroyave (mi esposo)</strong>
+                    </p>
+                    <p className="account-holder-role">
+                      La cuenta bancaria está a nombre de Juan Arroyave, mi esposo y administrador del proyecto.
+                    </p>
+                  </div>
+                </div>
+                <div className="account-verified-note">
+                  🛡️ Puedes transferir con total tranquilidad y confianza únicamente a los datos oficiales presentados a continuación.
+                </div>
+              </div>
+
+              {/* Payment Method Selector Tabs */}
               <div className="payment-tabs-header">
                 <button
                   type="button"
@@ -281,11 +303,6 @@ export default function CheckoutClient({
                   </span>
                   {activeTab === "breb" && <span className="tab-active-dot" />}
                 </button>
-              </div>
-
-              {/* Titular Simple */}
-              <div className="account-holder-strip">
-                <span>👤 Titular:</span> <strong>Juan Arroyave (mi esposo)</strong>
               </div>
 
               {/* Tab 1: Nequi */}
