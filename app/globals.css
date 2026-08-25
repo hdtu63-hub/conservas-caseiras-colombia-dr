@@ -1712,3 +1712,17 @@ details>p { max-width:720px; margin:0 0 28px 62px; color:#6a6058; line-height:1.
   .order-actions { flex-wrap:wrap; }
   .order-actions button, .order-actions a { flex:1; min-width:120px; }
 }
+
+/* Notiflix Customization */
+#NotiflixNotifyWrap {
+  font-family: var(--font-dm-sans), "DM Sans", sans-serif !important;
+  font-size: 13px !important;
+  z-index: 99999 !important;
+}
+#NotiflixNotifyWrap > div {
+  border-radius: 8px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.18) !important;
+  padding: 12px 18px !important;
+  line-height: 1.4 !important;
+}
+

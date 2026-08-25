@@ -3,6 +3,7 @@ import { DM_Sans, Fraunces } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import UtmPersistence from "./utm-persistence";
+import SocialProof from "./social-proof";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -98,7 +99,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 
       <noscript><img height="1" width="1" style={{ display: "none" }} src="https://www.facebook.com/tr?id=1832021307783603&ev=PageView&noscript=1" alt="" /></noscript>
       <UtmPersistence />
+      <SocialProof />
       {children}
     </body>
   </html>;
 }
+
