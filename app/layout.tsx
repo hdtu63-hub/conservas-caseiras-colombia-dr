@@ -36,49 +36,63 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="es-419">
     <body className={`${dmSans.variable} ${fraunces.variable}`}>
-      {/* Non-blocking Tracking on Idle / User Interaction */}
+      {/* Synchronous Pixel Queue Stub + Non-blocking Script Download */}
       <script dangerouslySetInnerHTML={{ __html: `
         (function() {
+          // 1. Initialize Meta Pixel Queue synchronously so fbq() is always available immediately
+          if (!window.fbq) {
+            var n = window.fbq = function() {
+              n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+            };
+            if (!window._fbq) window._fbq = n;
+            n.push = n;
+            n.loaded = !0;
+            n.version = '2.0';
+            n.queue = [];
+          }
+
+          // 2. Queue standard events immediately
+          fbq('init', '1832021307783603');
+          fbq('track', 'PageView');
+          fbq('track', 'ViewContent', {
+            content_name: 'Colección de Conservas Caseras',
+            content_category: 'Producto digital',
+            content_ids: ['conservas-caseras'],
+            content_type: 'product'
+          });
+
+          // 3. Defer the heavy script download (fbevents.js & utmify) to idle time or first user interaction
           var loaded = false;
-          function initThirdParty() {
+          function loadScripts() {
             if (loaded) return;
             loaded = true;
-            
-            // Meta Facebook Pixel
-            !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-            n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
-            n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
-            t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
-            (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init','1832021307783603');
-            fbq('track','PageView');
-            fbq('track','ViewContent', {
-              content_name: 'Colección de Conservas Caseras',
-              content_category: 'Producto digital',
-              content_ids: ['conservas-caseras'],
-              content_type: 'product'
-            });
 
-            // UTMify
-            var u = document.createElement('script');
-            u.src = 'https://cdn.utmify.com.br/scripts/utms/latest.js';
-            u.async = true;
-            u.setAttribute('data-utmify-prevent-subids', '');
-            document.head.appendChild(u);
+            // Load Meta fbevents.js
+            var fbScript = document.createElement('script');
+            fbScript.async = true;
+            fbScript.src = 'https://connect.facebook.net/en_US/fbevents.js';
+            document.head.appendChild(fbScript);
+
+            // Load UTMify
+            var utmScript = document.createElement('script');
+            utmScript.async = true;
+            utmScript.src = 'https://cdn.utmify.com.br/scripts/utms/latest.js';
+            utmScript.setAttribute('data-utmify-prevent-subids', '');
+            document.head.appendChild(utmScript);
           }
 
           if ('requestIdleCallback' in window) {
-            requestIdleCallback(initThirdParty, { timeout: 2000 });
+            requestIdleCallback(loadScripts, { timeout: 2000 });
           } else {
-            setTimeout(initThirdParty, 1500);
+            setTimeout(loadScripts, 1500);
           }
 
           var events = ['mousemove', 'touchstart', 'scroll', 'keydown', 'click'];
-          function trigger() {
-            initThirdParty();
-            events.forEach(function(e) { window.removeEventListener(e, trigger, { passive: true }); });
+          function onInteract() {
+            loadScripts();
+            events.forEach(function(e) { window.removeEventListener(e, onInteract, { passive: true }); });
           }
-          events.forEach(function(e) { window.addEventListener(e, trigger, { passive: true, once: true }); });
+          events.forEach(function(e) { window.addEventListener(e, onInteract, { passive: true, once: true }); });
         })();
       ` }} />
 
