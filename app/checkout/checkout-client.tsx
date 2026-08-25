@@ -830,8 +830,8 @@ function CheckoutClientInternal({
           </div>
         </div>
 
-        {/* Modal da Roleta de Descontos (Ativado em Exit-Intent ou Back-Redirect no Checkout) */}
-        <RuletaModal />
+        {/* Modal da Roleta de Descontos (Ativado em Exit-Intent ou Back-Redirect apenas no Checkout quando a compra não for concluída) */}
+        <RuletaModal disabled={status === "approved" || status === "sending_email" || status === "email_input"} />
       </div>
     </main>
   );

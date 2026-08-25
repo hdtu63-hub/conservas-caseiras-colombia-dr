@@ -35,7 +35,11 @@ const SLICES_SPIN_2: Slice[] = [
   { text: "TODO X $8.000", subtext: "¡7 BONOS VIP!", bgColor: "#c15542", textColor: "#ffffff", isWinner: true },
 ];
 
-export default function RuletaModal() {
+interface RuletaModalProps {
+  disabled?: boolean;
+}
+
+export default function RuletaModal({ disabled = false }: RuletaModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
   const [step, setStep] = useState<"spin_1" | "win_75" | "spin_2_prompt" | "win_8k">("spin_1");
@@ -200,7 +204,7 @@ export default function RuletaModal() {
 
   // Backredirect & Exit Intent Setup
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || disabled) return;
 
     const handleCustomOpen = () => {
       setIsOpen(true);

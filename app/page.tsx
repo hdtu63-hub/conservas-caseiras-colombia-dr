@@ -1,7 +1,6 @@
 import Tracker from "./tracker";
 import Image from "next/image";
 import ReactDOM from "react-dom";
-import RuletaModal from "./ruleta-modal";
 
 const benefits = [
   ["Empieza desde cero", "Aprende preparación, esterilización, envasado y conservación paso a paso."],
@@ -87,7 +86,6 @@ export default function Home() {
   const ticker = ["Edición limitada · oferta válida solo por hoy", "Acceso de por vida", "+100 recetas rentables", "Garantía de 30 días", "Entrega digital inmediata"];
   return <main>
     <Tracker />
-    <RuletaModal />
     <div className="ticker" aria-label="Información de la oferta"><div>{[...ticker, ...ticker, ...ticker].map((item, i) => <span key={i} aria-hidden={i >= ticker.length}><i>✦</i>{item}</span>)}</div></div>
 
     <section className="hero paper"><div className="container hero-grid">
