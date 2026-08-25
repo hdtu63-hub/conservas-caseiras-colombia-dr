@@ -221,13 +221,11 @@ export default function RuletaModal() {
 
     const handlePopState = () => {
       if (isNavigatingInternally.current) return;
-      if (!hasTriggeredRef.current) {
-        hasTriggeredRef.current = true;
-        setIsOpen(true);
-        try {
-          window.history.pushState({ page: "conservas_home_active" }, "", window.location.href);
-        } catch {}
-      }
+      hasTriggeredRef.current = true;
+      setIsOpen(true);
+      try {
+        window.history.pushState({ page: "conservas_discount_locked" }, "", window.location.href);
+      } catch {}
     };
 
     window.addEventListener("popstate", handlePopState);
@@ -548,15 +546,17 @@ export default function RuletaModal() {
       <canvas ref={confettiCanvasRef} className="ruleta-confetti-canvas" />
 
       <div className="ruleta-modal-card paper">
-        {/* Botão de fechar */}
-        <button
-          type="button"
-          onClick={handleReject75OrClose}
-          className="ruleta-close-btn"
-          aria-label="Cerrar ventana"
-        >
-          ✕
-        </button>
+        {/* Botão de fechar (escondido na etapa de 2º giro) */}
+        {step !== "spin_2_prompt" && (
+          <button
+            type="button"
+            onClick={handleReject75OrClose}
+            className="ruleta-close-btn"
+            aria-label="Cerrar ventana"
+          >
+            ✕
+          </button>
+        )}
 
         {step === "spin_1" && (
           /* ESTADO 1: PRIMER GIRO DE LA RULETA */
@@ -752,14 +752,6 @@ export default function RuletaModal() {
             >
               <span>{isSpinning ? "¡Girando tu tiro extra VIP..." : "👉 ¡GIRAR RULETA POR SEGUNDA VEZ! (ÚLTIMO TIRO)"}</span>
               {!isSpinning && <b aria-hidden="true">🎰</b>}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="ruleta-dismiss-link"
-            >
-              No gracias, prefiero salir definitivamente sin girar
             </button>
           </div>
         )}
