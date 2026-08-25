@@ -1,5 +1,6 @@
 import Tracker from "./tracker";
 import Image from "next/image";
+import ReactDOM from "react-dom";
 
 const benefits = [
   ["Empieza desde cero", "Aprende preparación, esterilización, envasado y conservación paso a paso."],
@@ -81,6 +82,7 @@ function HeroMedia() {
 }
 
 export default function Home() {
+  ReactDOM.preload("/images/especialista-conservas.webp", { as: "image", fetchPriority: "high" });
   const ticker = ["Edición limitada · oferta válida solo por hoy", "Acceso de por vida", "+100 recetas rentables", "Garantía de 30 días", "Entrega digital inmediata"];
   return <main>
     <Tracker />
