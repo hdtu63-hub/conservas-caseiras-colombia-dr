@@ -17,14 +17,14 @@ export default function CheckoutCompleta() {
         "Tabla práctica de costos y cálculo de precios ($23.000)",
         "Guías completas para vender tus conservas",
         "Materiales sobre márgenes y ganancias",
-        "4 bonos exclusivos incluidos gratis hoy ($78.000)",
+        "4 bonos exclusivos incluidos gratis hoy ($89.000)",
         "Actualizaciones futuras de por vida gratis",
         "Acceso digital ilimitado e inmediato",
       ]}
       bonuses={[
         "Manual de etiquetas listas para conservas",
         "Guía Ganancias en un Frasco ($19.000)",
-        "Mermeladas Artesanales y Sabores Especiales ($17.000)",
+        "Mermeladas Artesanales y Sabores Especiales ($28.000)",
         "Guía práctica de conservación y cuidados ($19.000)",
       ]}
     />

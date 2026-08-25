@@ -233,22 +233,6 @@ function CheckoutClientInternal({
   return (
     <main className="checkout-page paper">
       <div className="checkout-container">
-        {/* Navigation & Breadcrumb */}
-        <div className="checkout-nav-row">
-          <a
-            href="/"
-            onClick={(e) => {
-              if (!is8kDiscount) {
-                e.preventDefault();
-                window.dispatchEvent(new CustomEvent("open-ruleta-modal"));
-              }
-            }}
-            className="checkout-back"
-          >
-            <span aria-hidden="true">←</span> Volver a la página principal
-          </a>
-        </div>
-
         {/* Top Product Showcase Banner */}
         {bannerImage && (
           <div className="checkout-top-banner-wrapper">
