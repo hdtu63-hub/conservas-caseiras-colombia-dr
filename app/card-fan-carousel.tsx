@@ -46,7 +46,7 @@ export default function CardFanCarousel({ cards }: SocialCardsProps) {
   const touchStartY = useRef<number | null>(null);
 
   const totalCards = cards.length;
-  const [centerIndex, setCenterIndex] = useState(HALF);
+  const [centerIndex, setCenterIndex] = useState(0);
 
   const getVisibleMap = useCallback((center: number) => {
     const map = new Map<number, number>();
