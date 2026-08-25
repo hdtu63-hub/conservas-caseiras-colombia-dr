@@ -9,6 +9,7 @@ interface CheckoutProps {
   price: string;
   originalPrice?: string;
   savings?: string;
+  bannerImage?: string;
   image?: string;
   features: string[];
   bonuses?: string[];
@@ -20,6 +21,7 @@ export default function CheckoutClient({
   price,
   originalPrice = edition === "esencial" ? "$89.000" : "$149.000",
   savings = edition === "esencial" ? "$69.000" : "$121.000",
+  bannerImage,
   image = edition === "esencial" ? "/images/materials/03-recetas-seleccionadas.jpg" : "/images/materials/01-guia-completa.jpg",
   features,
   bonuses = [],
@@ -44,14 +46,7 @@ export default function CheckoutClient({
   const [email, setEmail] = useState("");
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
-  const [orderCode, setOrderCode] = useState("COL-2849");
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    // Generate an order reference number based on day/session
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    setOrderCode(`CC-COL-${randomSuffix}`);
-  }, []);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
@@ -205,34 +200,29 @@ export default function CheckoutClient({
 
   return (
     <main className="checkout-page paper">
-      {/* Top Security Banner */}
-      <div className="checkout-top-security-bar">
-        <div className="checkout-security-content">
-          <span className="security-badge-item">
-            <svg className="lock-icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-              <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
-            </svg>
-            Checkout Seguro SSL 256-Bit
-          </span>
-          <span className="security-divider">|</span>
-          <span className="security-badge-item">🔒 Transacción Encriptada</span>
-          <span className="security-divider">|</span>
-          <span className="security-badge-item">↻ Garantía de 30 Días</span>
-          <span className="security-divider">|</span>
-          <span className="security-badge-item">⚡ Entrega Inmediata</span>
-        </div>
-      </div>
-
       <div className="checkout-container">
         {/* Navigation & Breadcrumb */}
         <div className="checkout-nav-row">
           <a href="/" className="checkout-back">
             <span aria-hidden="true">←</span> Volver a la página principal
           </a>
-          <div className="checkout-order-tag">
-            <span>Referencia:</span> <strong>{orderCode}</strong>
-          </div>
         </div>
+
+        {/* Top Product Showcase Banner */}
+        {bannerImage && (
+          <div className="checkout-top-banner-wrapper">
+            <Image
+              src={bannerImage}
+              alt={title}
+              width={1024}
+              height={576}
+              priority
+              quality={95}
+              className="checkout-top-banner-img"
+              sizes="(max-width: 768px) 100vw, 1160px"
+            />
+          </div>
+        )}
 
         {/* Step Progress Tracker */}
         <div className="checkout-steps-bar" role="navigation" aria-label="Progreso del pedido">
@@ -278,7 +268,7 @@ export default function CheckoutClient({
                       <span>✓ Cuenta Oficial Verificada</span>
                     </div>
                     <p className="account-holder-name">
-                      Titular Autorizado: <strong>Juan Arroyave (mi esposo)</strong>
+                      Titular: <strong>Juan Arroyave (mi esposo)</strong>
                     </p>
                     <p className="account-holder-role">
                       La cuenta bancaria está a nombre de Juan Arroyave, mi esposo y administrador del proyecto.

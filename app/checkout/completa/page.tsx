@@ -8,6 +8,7 @@ export default function CheckoutCompleta() {
       price="$28.000"
       originalPrice="$149.000"
       savings="$121.000"
+      bannerImage="/images/banners/banner-checkout-28k.webp"
       image="/images/materials/01-guia-completa.jpg"
       features={[
         "Todo lo incluido en la Edición Esencial",
@@ -29,4 +30,5 @@ export default function CheckoutCompleta() {
     />
   );
 }
+
 

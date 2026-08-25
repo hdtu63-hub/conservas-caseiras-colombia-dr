@@ -8,6 +8,7 @@ export default function CheckoutEsencial() {
       price="$20.000"
       originalPrice="$89.000"
       savings="$69.000"
+      bannerImage="/images/banners/banner-checkout-20k.webp"
       image="/images/materials/03-recetas-seleccionadas.jpg"
       features={[
         "100+ recetas probadas para preparar y vender",
@@ -19,4 +20,5 @@ export default function CheckoutEsencial() {
     />
   );
 }
+
 
