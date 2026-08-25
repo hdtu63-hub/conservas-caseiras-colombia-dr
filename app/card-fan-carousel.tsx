@@ -13,37 +13,27 @@ interface SocialCardsProps {
   cards: CardItem[];
 }
 
-const MAX_VISIBLE = 5;
-const HALF = 2;
+// Mostra 3 cards visíveis no fan — sempre pagina com 5 imagens
+const MAX_VISIBLE = 3;
+const HALF = 1;
 
+// Posições do leque com 3 cards: esquerda, centro, direita
 const FAN_POSITIONS = [
-  { rot: -18, scale: 0.80, x: -26, y: 6.0, zIndex: 1 },
-  { rot: -9,  scale: 0.90, x: -13, y: 2.0, zIndex: 2 },
+  { rot: -18, scale: 0.82, x: -28, y: 5.0, zIndex: 1 },
   { rot: 0,   scale: 1.0,  x: 0,   y: 0.0, zIndex: 10 },
-  { rot: 9,   scale: 0.90, x: 13,  y: 2.0, zIndex: 2 },
-  { rot: 18,  scale: 0.80, x: 26,  y: 6.0, zIndex: 1 },
+  { rot: 18,  scale: 0.82, x: 28,  y: 5.0, zIndex: 1 },
 ];
 
 function getResponsiveMultiplier(width: number) {
-  if (width < 380) return 0.55;
-  if (width < 480) return 0.65;
-  if (width < 640) return 0.78;
-  if (width < 768) return 0.88;
+  if (width < 380) return 0.62;
+  if (width < 480) return 0.72;
+  if (width < 640) return 0.85;
+  if (width < 768) return 0.92;
   return 1.0;
 }
 
-function getSlotConfig(totalCards: number, slot: number) {
-  if (totalCards >= MAX_VISIBLE) return FAN_POSITIONS[slot];
-  const center = totalCards >> 1;
-  const distance = totalCards > 1 ? (slot - center) / center : 0;
-  const absDistance = Math.abs(distance);
-  return {
-    rot: distance * 18,
-    scale: 1.0 - 0.20 * absDistance * absDistance,
-    x: distance * 26,
-    y: absDistance * absDistance * 6.0,
-    zIndex: 10 - Math.abs(slot - center),
-  };
+function getSlotConfig(slot: number) {
+  return FAN_POSITIONS[slot] ?? FAN_POSITIONS[HALF];
 }
 
 export default function CardFanCarousel({ cards }: SocialCardsProps) {
@@ -53,30 +43,47 @@ export default function CardFanCarousel({ cards }: SocialCardsProps) {
   const directionRef = useRef<"left" | "right" | null>(null);
   const prevVisible = useRef<Set<number>>(new Set());
 
+  // Swipe touch
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+
   const totalCards = cards.length;
-  const needsPagination = totalCards > MAX_VISIBLE;
-  const [centerIndex, setCenterIndex] = useState(needsPagination ? HALF : totalCards >> 1);
+  const [centerIndex, setCenterIndex] = useState(HALF);
 
   const getVisibleMap = useCallback((center: number) => {
     const map = new Map<number, number>();
-    if (!needsPagination) {
-      cards.forEach((_, i) => map.set(i, i));
-      return map;
-    }
     for (let slot = 0; slot < MAX_VISIBLE; slot++) {
       map.set(((center + slot - HALF) % totalCards + totalCards) % totalCards, slot);
     }
     return map;
-  }, [totalCards, needsPagination, cards]);
+  }, [totalCards]);
 
   const cycle = useCallback((direction: "left" | "right") => {
-    if (isAnimating.current || !needsPagination) return;
+    if (isAnimating.current) return;
     isAnimating.current = true;
     directionRef.current = direction;
     setCenterIndex(prev =>
       direction === "right" ? (prev + 1) % totalCards : (prev - 1 + totalCards) % totalCards
     );
-  }, [totalCards, needsPagination]);
+  }, [totalCards]);
+
+  // Touch swipe handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    // Only horizontal swipes (wider than tall)
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+      cycle(dx < 0 ? "right" : "left");
+    }
+    touchStartX.current = null;
+    touchStartY.current = null;
+  }, [cycle]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -90,8 +97,6 @@ export default function CardFanCarousel({ cards }: SocialCardsProps) {
     const direction = directionRef.current;
     const isFirstMount = !hasEntered.current;
     const multiplier = getResponsiveMultiplier(window.innerWidth);
-    const slotCount = needsPagination ? MAX_VISIBLE : totalCards;
-    const config = (slot: number) => getSlotConfig(slotCount, slot);
 
     if (isFirstMount) isAnimating.current = true;
 
@@ -109,7 +114,7 @@ export default function CardFanCarousel({ cards }: SocialCardsProps) {
       const wasVisible = previouslyVisible.has(cardIndex);
 
       if (slot !== undefined) {
-        const { x, y, rot, scale, zIndex } = config(slot);
+        const { x, y, rot, scale, zIndex } = getSlotConfig(slot);
         const target = {
           x: `${x * multiplier}rem`,
           y: `${y}rem`,
@@ -121,17 +126,17 @@ export default function CardFanCarousel({ cards }: SocialCardsProps) {
 
         if (isFirstMount) {
           gsap.set(card, { x: 0, y: "10rem", rotation: 0, scale: 0.5, opacity: 0 });
-          gsap.to(card, { ...target, duration: 1.2, ease: "elastic.out(1.05,.78)", delay: 0.15 + slot * 0.07, onComplete: onCardDone });
+          gsap.to(card, { ...target, duration: 1.15, ease: "elastic.out(1.05,.78)", delay: 0.12 + slot * 0.08, onComplete: onCardDone });
         } else if (!wasVisible) {
-          const enterX = direction === "right" ? 36 : -36;
-          gsap.set(card, { x: `${enterX}rem`, y: `${y}rem`, rotation: direction === "right" ? 28 : -28, scale: 0.5, opacity: 0 });
+          const enterX = direction === "right" ? 38 : -38;
+          gsap.set(card, { x: `${enterX}rem`, y: `${y}rem`, rotation: direction === "right" ? 30 : -30, scale: 0.5, opacity: 0 });
           gsap.to(card, { ...target, duration: 0.55, ease: "power2.out", onComplete: onCardDone });
         } else {
           gsap.to(card, { ...target, duration: 0.45, ease: "power2.out", onComplete: onCardDone });
         }
       } else if (wasVisible) {
-        const exitX = direction === "right" ? -36 : 36;
-        gsap.to(card, { x: `${exitX}rem`, opacity: 0, scale: 0.5, rotation: direction === "right" ? -28 : 28, duration: 0.35, ease: "power2.in", zIndex: 0 });
+        const exitX = direction === "right" ? -38 : 38;
+        gsap.to(card, { x: `${exitX}rem`, opacity: 0, scale: 0.5, rotation: direction === "right" ? -30 : 30, duration: 0.35, ease: "power2.in", zIndex: 0 });
       } else if (isFirstMount) {
         gsap.set(card, { opacity: 0, scale: 0.3, x: 0, y: 0, zIndex: 0 });
       }
@@ -139,7 +144,7 @@ export default function CardFanCarousel({ cards }: SocialCardsProps) {
 
     prevVisible.current = new Set(visibleMap.keys());
 
-    // Hover interactions
+    // Hover interactions (desktop only)
     const visibleEntries: { el: HTMLElement; slot: number }[] = [];
     cardElements.forEach((el, i) => {
       const slot = visibleMap.get(i);
@@ -149,12 +154,11 @@ export default function CardFanCarousel({ cards }: SocialCardsProps) {
 
     let activeSlot: number | null = null;
     let leaveTimer: ReturnType<typeof setTimeout> | null = null;
-    const centerSlot = visibleEntries.length >> 1;
 
     const updateHoverLayout = (hoveredSlot: number | null) => {
       const mult = getResponsiveMultiplier(window.innerWidth);
       visibleEntries.forEach(({ el, slot }) => {
-        const base = config(slot);
+        const base = getSlotConfig(slot);
         let targetX = base.x * mult;
         let targetY = base.y;
         let targetRot = base.rot;
@@ -163,18 +167,17 @@ export default function CardFanCarousel({ cards }: SocialCardsProps) {
 
         if (hoveredSlot !== null) {
           const distance = Math.abs(slot - hoveredSlot);
-          delay = distance * 0.02;
+          delay = distance * 0.025;
           if (slot === hoveredSlot) {
-            targetY -= 2.0;
-            targetScale *= 1.07;
+            targetY -= 2.2;
+            targetScale *= 1.08;
           } else {
-            const normalized = centerSlot > 0 ? (slot - centerSlot) / centerSlot : 0;
-            const pushStrength = 7 * (1 - Math.abs(normalized)) * (1 + 0.15 * Math.max(0, 2 - distance));
-            if (slot < hoveredSlot) { targetX -= pushStrength * mult; targetRot -= 3 / (distance + 1); }
-            else { targetX += pushStrength * mult; targetRot += 3 / (distance + 1); }
+            const pushStrength = 7 / (distance + 0.5);
+            if (slot < hoveredSlot) { targetX -= pushStrength * mult; targetRot -= 4 / (distance + 1); }
+            else { targetX += pushStrength * mult; targetRot += 4 / (distance + 1); }
           }
         } else {
-          delay = Math.abs(slot - centerSlot) * 0.02;
+          delay = Math.abs(slot - HALF) * 0.025;
         }
 
         gsap.to(el, {
@@ -211,13 +214,17 @@ export default function CardFanCarousel({ cards }: SocialCardsProps) {
       window.removeEventListener("resize", onResize);
       if (leaveTimer) clearTimeout(leaveTimer);
     };
-  }, [centerIndex, totalCards, getVisibleMap, needsPagination]);
+  }, [centerIndex, totalCards, getVisibleMap]);
 
   if (!totalCards) return null;
 
   return (
     <div className="fan-carousel-section">
-      <div className="fan-carousel-stage">
+      <div
+        className="fan-carousel-stage"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         <div ref={containerRef} className="fan-carousel-container">
           {cards.map((card, index) => {
             const image = (
@@ -239,14 +246,12 @@ export default function CardFanCarousel({ cards }: SocialCardsProps) {
         </div>
       </div>
 
-      {/* Controles sempre visíveis, como no modelo de referência */}
+      {/* Controles sempre visíveis */}
       <div className="fan-carousel-controls">
         <button
           className="fan-arrow-btn"
           onClick={() => cycle("left")}
           aria-label="Anterior"
-          disabled={!needsPagination}
-          style={{ opacity: needsPagination ? 1 : 0.35 }}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
@@ -261,8 +266,6 @@ export default function CardFanCarousel({ cards }: SocialCardsProps) {
           className="fan-arrow-btn"
           onClick={() => cycle("right")}
           aria-label="Siguiente"
-          disabled={!needsPagination}
-          style={{ opacity: needsPagination ? 1 : 0.35 }}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="9 18 15 12 9 6" />
