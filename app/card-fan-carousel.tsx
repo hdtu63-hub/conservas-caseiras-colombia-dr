@@ -17,20 +17,20 @@ interface SocialCardsProps {
 const MAX_VISIBLE = 5;
 const HALF = 2;
 
-// Fan de 5 cards: bem espalhado como na imagem de referência
+// Fan de 5 cards: bem espalhado e proporcional em todas as telas
 const FAN_POSITIONS = [
-  { rot: -30, scale: 0.72, x: -40, y: 10.0, zIndex: 1 },
-  { rot: -15, scale: 0.87, x: -20, y: 3.0,  zIndex: 2 },
-  { rot: 0,   scale: 1.0,  x: 0,   y: 0.0,  zIndex: 10 },
-  { rot: 15,  scale: 0.87, x: 20,  y: 3.0,  zIndex: 2 },
-  { rot: 30,  scale: 0.72, x: 40,  y: 10.0, zIndex: 1 },
+  { rot: -26, scale: 0.76, x: -34, y: 7.0, zIndex: 1 },
+  { rot: -13, scale: 0.88, x: -17, y: 2.2, zIndex: 3 },
+  { rot: 0,   scale: 1.0,  x: 0,   y: 0.0, zIndex: 10 },
+  { rot: 13,  scale: 0.88, x: 17,  y: 2.2, zIndex: 3 },
+  { rot: 26,  scale: 0.76, x: 34,  y: 7.0, zIndex: 1 },
 ];
 
 function getResponsiveMultiplier(width: number) {
-  if (width < 380) return 0.58;
-  if (width < 480) return 0.68;
-  if (width < 640) return 0.80;
-  if (width < 768) return 0.92;
+  if (width < 380) return 0.40;
+  if (width < 480) return 0.48;
+  if (width < 640) return 0.60;
+  if (width < 768) return 0.82;
   return 1.0;
 }
 
