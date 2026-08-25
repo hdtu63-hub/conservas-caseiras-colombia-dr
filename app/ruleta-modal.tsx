@@ -30,7 +30,6 @@ export default function RuletaModal() {
   const [activeSliceIndex, setActiveSliceIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutos
   const [timeLeft8k, setTimeLeft8k] = useState(300); // 5 minutos
-  const [pointerBounce, setPointerBounce] = useState(false);
 
   const confettiCanvasRef = useRef<HTMLCanvasElement>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -53,21 +52,27 @@ export default function RuletaModal() {
     return audioCtxRef.current;
   }, []);
 
-  // Sonido de "click / tick" al pasar cada división
-  const playTickSound = useCallback(() => {
+  // Sonido de "click / tick" realista con tono adaptado a la velocidad
+  const playTickSound = useCallback((speedRatio = 1) => {
     try {
       const ctx = getAudioContext();
       if (!ctx) return;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "triangle";
-      osc.frequency.setValueAtTime(620 + Math.random() * 80, ctx.currentTime);
-      gain.gain.setValueAtTime(0.09, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.035);
+
+      // Frecuencia más pesada y grave cuando va lento (realismo de ruleta pesada)
+      const baseFreq = 480 + Math.min(280, speedRatio * 320);
+      osc.frequency.setValueAtTime(baseFreq + Math.random() * 40, ctx.currentTime);
+
+      const vol = Math.max(0.04, Math.min(0.12, 0.05 + speedRatio * 0.07));
+      gain.gain.setValueAtTime(vol, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start();
-      osc.stop(ctx.currentTime + 0.035);
+      osc.stop(ctx.currentTime + 0.04);
     } catch {
       // Ignorar errores de audio
     }
@@ -142,8 +147,8 @@ export default function RuletaModal() {
       pieces.forEach((p) => {
         p.x += p.speedX;
         p.y += p.speedY;
-        p.speedY += 0.35; // Gravedad
-        p.speedX *= 0.98; // Resistencia al aire
+        p.speedY += 0.35;
+        p.speedX *= 0.98;
         p.rotation += p.rotationSpeed;
 
         ctx.save();
@@ -233,13 +238,15 @@ export default function RuletaModal() {
     };
   }, []);
 
-  // Función para girar la aguja de la ruleta con física y suspenso
+  // Función para girar la aguja de la ruleta con FÍSICA 100% REALISTA Y CONTINUA
   const handleSpin = () => {
     if (isSpinning || step !== "spin") return;
     setIsSpinning(true);
     getAudioContext();
 
-    const spinDuration = 6000; // 6.0 segundos de suspenso
+    // 7 vueltas completas = 2520 grados (termina exactamente a las 12:00 en 75% DESCUENTO)
+    const targetDegrees = 360 * 7;
+    const spinDuration = 6200; // 6.2 segundos de giro continuo
     const startTime = performance.now();
     lastPinRef.current = -1;
 
@@ -247,37 +254,45 @@ export default function RuletaModal() {
       const elapsed = now - startTime;
       const progress = Math.min(1, elapsed / spinDuration);
 
-      let currentDeg = 0;
-      if (progress < 0.74) {
-        // Fase 1: Rápido giro por todos los descuentos y desaceleración natural
-        const norm = progress / 0.74;
-        const ease = 1 - Math.pow(1 - norm, 3.2);
-        currentDeg = ease * 2435; // Gira pasando 10%, 30%, 50%, Bono, 20%, Casi Ganas...
-      } else if (progress < 0.93) {
-        // Fase 2: Suspenso extremo... la aguja entra a 5% DESCUENTO y casi frena por completo
-        const norm = (progress - 0.74) / (0.93 - 0.74);
-        const ease = Math.sin(norm * (Math.PI / 2));
-        currentDeg = 2435 + ease * 68; // Se arrastra despacio de 2435 a 2503 deg (dentro de 5% DESCUENTO!)
-      } else {
-        // Fase 3: En el último instante, da el último clic y cruza a 75% DESCUENTO!
-        const norm = (progress - 0.93) / (1 - 0.93);
-        const ease = Math.pow(norm, 1.3);
-        currentDeg = 2503 + ease * 17; // Aterriza exactamente en 2520 deg (75% DESCUENTO)
+      // Curva física continua C^2: Desaceleración exponencial realista (sin saltos bruscos)
+      // Base: f(p) = 1 - (1 - p)^4.5
+      // Esta curva garantiza que la velocidad disminuye de manera natural y continua en cada milisegundo
+      const ease = 1 - Math.pow(1 - progress, 4.5);
+      let currentDeg = ease * targetDegrees;
+
+      // Micro-resistencia elástica de los pines (la aguja se flexiona ligeramente al pasar cada divisor)
+      const pinSpacing = 45;
+      const pinPhase = (currentDeg + 22.5) % pinSpacing;
+      let pinFlexOffset = 0;
+      if (pinPhase > 38) {
+        // La aguja empuja el pin entrante y se frena un milímetro
+        pinFlexOffset = -Math.min(2.2, (pinPhase - 38) * 0.35);
+      } else if (pinPhase < 7) {
+        // La aguja salta el pin hacia adelante
+        pinFlexOffset = Math.min(1.8, (7 - pinPhase) * 0.25);
       }
 
-      setNeedleAngle(currentDeg);
+      // Micro-rebote amortiguado al llegar al final (0.97 a 1.0)
+      if (progress > 0.97) {
+        const settleProgress = (progress - 0.97) / 0.03;
+        const damp = Math.exp(-settleProgress * 5) * Math.sin(settleProgress * Math.PI * 3);
+        pinFlexOffset += damp * 1.5;
+      }
 
-      // Determinar qué fatia está apuntando la aguja
-      const normalizedAngle = (currentDeg % 360 + 360) % 360;
+      const finalVisualAngle = currentDeg + pinFlexOffset;
+      setNeedleAngle(finalVisualAngle);
+
+      // Determinar qué fatia está apuntando la aguja en este instante
+      const normalizedAngle = (finalVisualAngle % 360 + 360) % 360;
       const currentSlice = Math.floor((normalizedAngle + 22.5) / 45) % SLICES.length;
       setActiveSliceIndex(currentSlice);
 
+      // Disparar sonido de tick al cruzar cada divisor
       const pinIndex = Math.floor((currentDeg + 22.5) / 45);
       if (pinIndex !== lastPinRef.current) {
         lastPinRef.current = pinIndex;
-        playTickSound();
-        setPointerBounce(true);
-        setTimeout(() => setPointerBounce(false), 45);
+        const currentSpeedRatio = Math.max(0.05, 1 - progress);
+        playTickSound(currentSpeedRatio);
       }
 
       if (progress < 1) {
@@ -361,10 +376,10 @@ export default function RuletaModal() {
                 d={pathData}
                 fill={slice.bgColor}
                 stroke={isCurrentActive ? "#ffd54f" : "rgba(244, 240, 231, 0.35)"}
-                strokeWidth={isCurrentActive ? "3" : "1.5"}
+                strokeWidth={isCurrentActive ? "3.5" : "1.5"}
                 style={{
-                  filter: isCurrentActive ? "brightness(1.15)" : "none",
-                  transition: "filter 0.1s ease",
+                  filter: isCurrentActive ? "brightness(1.18)" : "none",
+                  transition: "filter 0.15s ease, stroke 0.15s ease",
                 }}
               />
               {/* Texto da fatia alinhado radialmente */}
@@ -398,7 +413,26 @@ export default function RuletaModal() {
           );
         })}
 
-        {/* Luzes decorativas */}
+        {/* Clavijas / Pinos divisores en el borde exterior */}
+        {SLICES.map((_, i) => {
+          const pinAngleDeg = i * sliceAngleDeg + 22.5 - 90;
+          const pinRad = (pinAngleDeg * Math.PI) / 180;
+          const px = center + (radius - 2) * Math.cos(pinRad);
+          const py = center + (radius - 2) * Math.sin(pinRad);
+          return (
+            <circle
+              key={i}
+              cx={px}
+              cy={py}
+              r="3.5"
+              fill="#ffe082"
+              stroke="#211914"
+              strokeWidth="1.2"
+            />
+          );
+        })}
+
+        {/* Luzes decorativas no aro */}
         {Array.from({ length: 24 }).map((_, b) => {
           const bulbAngle = (b * (2 * Math.PI)) / 24;
           const bx = center + (radius + 6) * Math.cos(bulbAngle);
@@ -414,26 +448,26 @@ export default function RuletaModal() {
           );
         })}
 
-        {/* SETA / AGULHA GIRATÓRIA CENTRAL QUE RODA E APONTA PARA OS DESCONTOS */}
+        {/* SETA / AGULHA GIRATÓRIA CENTRAL */}
         <g
           transform={`rotate(${needleAngle}, ${center}, ${center})`}
           filter="url(#ruletaNeedleShadow)"
         >
-          {/* Corpo da Seta */}
+          {/* Corpo principal da Seta Dourada */}
           <path
-            d={`M ${center - 9} ${center} L ${center} 40 L ${center + 9} ${center} L ${center} ${center + 18} Z`}
+            d={`M ${center - 9} ${center} L ${center} 38 L ${center + 9} ${center} L ${center} ${center + 18} Z`}
             fill="url(#ruletaNeedleGrad)"
             stroke="#211914"
             strokeWidth="2"
           />
-          {/* Brilho interno da seta */}
+          {/* Brilho interno chanfrado da seta */}
           <path
-            d={`M ${center - 4} ${center} L ${center} 46 L ${center + 4} ${center} Z`}
+            d={`M ${center - 4} ${center} L ${center} 44 L ${center + 4} ${center} Z`}
             fill="#ffffff"
-            opacity="0.6"
+            opacity="0.65"
           />
-          {/* Ponta vermelha da seta */}
-          <circle cx={center} cy="48" r="5" fill="#ff1744" stroke="#fff" strokeWidth="1.2" />
+          {/* Ponta vermelha de precisão */}
+          <circle cx={center} cy="46" r="5" fill="#ff1744" stroke="#fff" strokeWidth="1.2" />
         </g>
 
         {/* Centro da Ruleta (Buje dourado central) */}
