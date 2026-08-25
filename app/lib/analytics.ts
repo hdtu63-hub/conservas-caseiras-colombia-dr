@@ -74,12 +74,50 @@ export async function getStats(targetDate?: string) {
   const todayEvents = events.filter((e) => e.timestamp.startsWith(today));
   const countToday = (type: string) => todayEvents.filter((e) => e.type === type).length;
 
+  // Filtrar eventos de pagamentos aprovados (evitando contagem duplicada quando o mesmo pedido emite payment_approved e payment_approved_email)
+  const isApprovedPayment = (e: TrackEvent) =>
+    e.type === "payment_approved" ||
+    e.type === "payment_approved_email" ||
+    e.type === "payment_approved_no_email";
+
+  const todayApproved = todayEvents.filter((e) => isApprovedPayment(e));
+  
+  // Calcular receita evitando duplicidades se houver payment_approved e payment_approved_email juntos
+  // Somente somamos eventos 'payment_approved_email', 'payment_approved_no_email', e 'payment_approved' que não tenham email_submitted correspondente
   const totalRevenueToday = todayEvents
-    .filter((e) => e.type === "payment_approved")
+    .filter((e) => e.type === "payment_approved" || e.type === "payment_approved_email" || e.type === "payment_approved_no_email")
     .reduce((sum, e) => {
       const monto = e.metadata?.monto ? parseInt(e.metadata.monto, 10) : 0;
       return sum + (isNaN(monto) ? 0 : monto);
     }, 0);
+
+  // Breakdown por promoção / roleta
+  const countPromo = (evs: TrackEvent[], key: "8k" | "75" | "completa" | "esencial") => {
+    return evs.filter((e) => {
+      if (!isApprovedPayment(e)) return false;
+      const discount = e.metadata?.discount;
+      const edition = e.metadata?.edition || "";
+      const roleta = e.metadata?.roleta || "";
+      if (key === "8k") return discount === "8k" || edition.includes("8k") || roleta.includes("8 mil") || e.metadata?.monto === "8000";
+      if (key === "75") return discount === "75" || edition.includes("75off") || roleta.includes("75%") || e.metadata?.monto === "14000";
+      if (key === "esencial") return edition === "esencial" || e.metadata?.monto === "20000";
+      if (key === "completa") return (edition === "completa" || e.metadata?.monto === "28000") && discount !== "8k" && discount !== "75";
+      return false;
+    }).length;
+  };
+
+  const countEmailStatus = (evs: TrackEvent[], statusKey: "sent" | "timeout_60s" | "pending") => {
+    if (statusKey === "sent") {
+      return evs.filter((e) => e.type === "payment_approved_email" || e.metadata?.emailStatus === "digitou_e_enviado" || (e.type === "payment_approved" && !!e.metadata?.email)).length;
+    }
+    if (statusKey === "timeout_60s") {
+      return evs.filter((e) => e.type === "payment_approved_no_email" || e.metadata?.emailStatus === "nao_digitou_esperou_60s" || e.metadata?.emailStatus === "nao_digitou_clicou_direto").length;
+    }
+    if (statusKey === "pending") {
+      return evs.filter((e) => e.type === "payment_manual_review" || e.type === "payment_rejected").length;
+    }
+    return 0;
+  };
 
   return {
     total: {
@@ -89,10 +127,11 @@ export async function getStats(targetDate?: string) {
       checkoutViewsEsencial: count("checkout_view_esencial"),
       checkoutViewsCompleta: count("checkout_view_completa") + count("checkout_view_completa_75off") + count("checkout_view_completa_8k"),
       receiptsUploaded: count("upload_receipt"),
-      paymentsApproved: count("payment_approved"),
-      paymentsApprovedEsencial: events.filter((e) => e.type === "payment_approved" && e.metadata?.edition === "esencial").length,
-      paymentsApprovedCompleta: events.filter((e) => e.type === "payment_approved" && (e.metadata?.edition === "completa" || e.metadata?.edition === "completa_75off" || e.metadata?.edition === "completa_8k")).length,
+      paymentsApproved: events.filter(isApprovedPayment).length,
+      paymentsApprovedEsencial: events.filter((e) => isApprovedPayment(e) && e.metadata?.edition === "esencial").length,
+      paymentsApprovedCompleta: events.filter((e) => isApprovedPayment(e) && (e.metadata?.edition === "completa" || e.metadata?.edition === "completa_75off" || e.metadata?.edition === "completa_8k")).length,
       paymentsRejected: count("payment_rejected"),
+      paymentsManualReview: count("payment_manual_review"),
     },
     today: {
       pageViews: countToday("page_view"),
@@ -101,12 +140,24 @@ export async function getStats(targetDate?: string) {
       checkoutViewsEsencial: countToday("checkout_view_esencial"),
       checkoutViewsCompleta: countToday("checkout_view_completa") + countToday("checkout_view_completa_75off") + countToday("checkout_view_completa_8k"),
       receiptsUploaded: countToday("upload_receipt"),
-      paymentsApproved: countToday("payment_approved"),
-      paymentsApprovedEsencial: todayEvents.filter((e) => e.type === "payment_approved" && e.metadata?.edition === "esencial").length,
-      paymentsApprovedCompleta: todayEvents.filter((e) => e.type === "payment_approved" && (e.metadata?.edition === "completa" || e.metadata?.edition === "completa_75off" || e.metadata?.edition === "completa_8k")).length,
+      paymentsApproved: todayApproved.length,
+      paymentsApprovedEsencial: todayEvents.filter((e) => isApprovedPayment(e) && e.metadata?.edition === "esencial").length,
+      paymentsApprovedCompleta: todayEvents.filter((e) => isApprovedPayment(e) && (e.metadata?.edition === "completa" || e.metadata?.edition === "completa_75off" || e.metadata?.edition === "completa_8k")).length,
       paymentsRejected: countToday("payment_rejected"),
+      paymentsManualReview: countToday("payment_manual_review"),
       totalRevenueToday,
+      
+      // Detalhamento de e-mails
+      emailsSent: countEmailStatus(todayEvents, "sent"),
+      emailsTimeout60s: countEmailStatus(todayEvents, "timeout_60s"),
+
+      // Detalhamento por Promoção / Roleta
+      promo8k: countPromo(todayEvents, "8k"),
+      promo75: countPromo(todayEvents, "75"),
+      promoCompletaRegular: countPromo(todayEvents, "completa"),
+      promoEsencialRegular: countPromo(todayEvents, "esencial"),
     },
-    recentEvents: todayEvents.slice(-200).reverse(),
+    recentEvents: todayEvents.slice(-300).reverse(),
   };
 }
+

@@ -1,16 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
+import { trackEvent } from "@/app/lib/analytics";
 
 export const runtime = "edge";
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, edition, receiptUrl, moveReceipt } = await req.json();
+    const { email, edition, discount, receiptUrl, moveReceipt } = await req.json();
 
     if (!email) {
       return NextResponse.json({ success: false, error: "Email is required" }, { status: 400 });
     }
 
-    // Receipt moving disabled (unsupported on edge without R2)
+    const is8k = edition?.includes("8k") || discount === "8k" || discount === "8000";
+    const is75 = !is8k && (edition?.includes("75off") || discount === "75");
+    const monto = is8k ? "8000" : (is75 ? "14000" : (edition === "esencial" ? "20000" : "28000"));
+    const roleta = is8k ? "Giro 2 (8 mil pesos)" : (is75 ? "Giro 1 (75% OFF)" : "Não girou");
+
+    // Rastrear envio com e-mail confirmado
+    await trackEvent("payment_approved_email", {
+      email,
+      edition: edition || "completa",
+      discount: is8k ? "8k" : (is75 ? "75" : "none"),
+      monto,
+      roleta,
+      emailStatus: "digitou_e_enviado",
+    });
 
     // ==== ENVIO DE E-MAIL (Brevo) PARA O CLIENTE ====
     const brevoApiKey = process.env.BREVO_API_KEY;
@@ -56,3 +70,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false }, { status: 500 });
   }
 }
+

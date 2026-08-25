@@ -68,15 +68,60 @@ function CheckoutClientInternal({
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [countdown, setCountdown] = useState(60);
+
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    if (status === "email_input") {
-      timeoutId = setTimeout(() => {
-        router.push("/checkout/confirmado");
-      }, 60000);
-    }
-    return () => clearTimeout(timeoutId);
-  }, [status, router]);
+    if (status !== "email_input") return;
+    setCountdown(60);
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          // Timeout de 60s: cliente comprou e esperou os 60s para a página carregar
+          const editionParam = is8kDiscount ? "completa_8k" : (is75Discount ? "completa_75off" : edition);
+          const roletaStr = is8kDiscount ? "Giro 2 (8 mil pesos)" : (is75Discount ? "Giro 1 (75% OFF)" : "Não girou");
+          fetch("/api/track", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: "payment_approved_no_email",
+              metadata: {
+                edition: editionParam,
+                discount: is8kDiscount ? "8k" : (is75Discount ? "75" : "none"),
+                monto: String(numericAmount),
+                roleta: roletaStr,
+                emailStatus: "nao_digitou_esperou_60s",
+              },
+            }),
+          }).catch(() => {});
+          router.push("/checkout/confirmado");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [status, router, is8kDiscount, is75Discount, edition, numericAmount]);
+
+  function handleSkipEmail() {
+    const editionParam = is8kDiscount ? "completa_8k" : (is75Discount ? "completa_75off" : edition);
+    const roletaStr = is8kDiscount ? "Giro 2 (8 mil pesos)" : (is75Discount ? "Giro 1 (75% OFF)" : "Não girou");
+    fetch("/api/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "payment_approved_no_email",
+        metadata: {
+          edition: editionParam,
+          discount: is8kDiscount ? "8k" : (is75Discount ? "75" : "none"),
+          monto: String(numericAmount),
+          roleta: roletaStr,
+          emailStatus: "nao_digitou_clicou_direto",
+        },
+      }),
+    }).catch(() => {});
+    router.push("/checkout/confirmado");
+  }
 
   useEffect(() => {
     const promoSuffix = is8kDiscount ? "_8k" : (is75Discount ? "_75off" : "");
@@ -573,8 +618,12 @@ function CheckoutClientInternal({
                     </div>
 
                     <div className="email-capture-box">
+                      <div className="email-countdown-banner">
+                        <span className="countdown-icon">⏱️</span>
+                        <span>Redirigiendo automáticamente a tu material en <strong>{countdown}s</strong></span>
+                      </div>
                       <p className="email-capture-label">
-                        Ingresa tu correo electrónico para enviarte el enlace de acceso permanente y respaldo del material:
+                        Ingresa tu correo para recibir el enlace permanente y respaldo de todo tu material:
                       </p>
                       <form onSubmit={handleEmailSubmit} className="email-form-modern">
                         <div className="input-icon-wrap">
@@ -594,9 +643,18 @@ function CheckoutClientInternal({
                           className="button email-submit-btn"
                           disabled={status === "sending_email"}
                         >
-                          {status === "sending_email" ? "Enviando acceso..." : "Acceder a mi material ahora →"}
+                          {status === "sending_email" ? "Enviando acceso..." : "Enviar a mi correo y acceder →"}
                         </button>
                       </form>
+                      
+                      <button
+                        type="button"
+                        onClick={handleSkipEmail}
+                        className="email-skip-button"
+                      >
+                        O accede directamente sin registrar correo →
+                      </button>
+
                       <span className="email-privacy-notice">🔒 Tu correo está 100% protegido contra spam.</span>
                     </div>
                   </div>

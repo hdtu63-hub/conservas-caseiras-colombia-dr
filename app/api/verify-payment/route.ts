@@ -94,7 +94,13 @@ export async function POST(req: NextRequest) {
         if (result.es_comprobante === true) {
           const fallbackMonto = amount || (edition.includes("8k") || discount === "8k" || discount === "8000" ? "8000" : (edition.includes("75off") || discount === "75" ? "14000" : (edition === "esencial" ? "20000" : "28000")));
           const montoStr = result.monto ? String(result.monto) : fallbackMonto;
-          const meta: Record<string, string> = { edition, monto: montoStr };
+          const roletaStr = discount === "8k" || edition.includes("8k") ? "Giro 2 (8 mil pesos)" : (discount === "75" || edition.includes("75off") ? "Giro 1 (75% OFF)" : "Não girou");
+          const meta: Record<string, string> = {
+            edition,
+            monto: montoStr,
+            roleta: roletaStr,
+            emailStatus: "aguardando_email",
+          };
           if (discount) meta.discount = discount;
           await trackEvent("payment_approved", meta);
           
