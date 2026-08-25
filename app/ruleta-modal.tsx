@@ -43,6 +43,15 @@ export default function RuletaModal({ disabled = false }: RuletaModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
   const [step, setStep] = useState<"spin_1" | "win_75" | "spin_2_prompt" | "win_8k">("spin_1");
+
+  // Se o desconto de 8k já estiver ativo na URL ou sessão, a roleta fica 100% desativada
+  const is8kActive =
+    typeof window !== "undefined" &&
+    (window.location.search.includes("8k") ||
+      window.location.search.includes("8000") ||
+      sessionStorage.getItem("conservas_promo_8k") === "true");
+
+  const isEffectivelyDisabled = disabled || is8kActive;
   const [needleAngle, setNeedleAngle] = useState(0); // Começa em BONO EXTRA (0° às 12h)
   const [activeSliceIndex, setActiveSliceIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutos
@@ -204,7 +213,7 @@ export default function RuletaModal({ disabled = false }: RuletaModalProps) {
 
   // Backredirect & Exit Intent Setup (Compatível com iPhone iOS Safari e Android)
   useEffect(() => {
-    if (typeof window === "undefined" || disabled) return;
+    if (typeof window === "undefined" || isEffectivelyDisabled) return;
 
     // Flag para ignorar navigações internas (hash links, checkout, etc.)
     let isInternalNav = false;
@@ -435,7 +444,7 @@ export default function RuletaModal({ disabled = false }: RuletaModalProps) {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || isEffectivelyDisabled) return null;
 
   // Renderizar a Ruleta SVG com a agulha
   const renderSvgWheel = () => {
@@ -877,15 +886,19 @@ export default function RuletaModal({ disabled = false }: RuletaModalProps) {
               </p>
             </div>
 
-            {/* Botón al Checkout de $8.000 */}
-            <a
-              href="/checkout/completa?descuento=8k"
-              onClick={() => setIsOpen(false)}
+            {/* Botão ao Checkout de $8.000 com window.location.replace para não permitir voltar a esta tela */}
+            <button
+              type="button"
+              onClick={() => {
+                try { sessionStorage.setItem("conservas_promo_8k", "true"); } catch {}
+                setIsOpen(false);
+                window.location.replace("/checkout/completa?descuento=8k");
+              }}
               className="button ruleta-checkout-cta-btn btn-8k"
             >
               <span>¡QUIERO TODO POR SOLO $8.000 COP!</span>
               <b aria-hidden="true">→</b>
-            </a>
+            </button>
 
             <div className="ruleta-trust-row" style={{ marginTop: "14px", marginBottom: "4px" }}>
               <span>♢ Pago Seguro</span>
