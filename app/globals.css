@@ -2391,6 +2391,18 @@ details>p { max-width:720px; margin:0 0 28px 62px; color:#6a6058; line-height:1.
   background: #d84315 !important;
 }
 
+.badge-second-chance {
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2) !important;
+  border: 1.5px solid #ff9800 !important;
+  color: #bf360c !important;
+}
+
+.btn-2nd-spin {
+  background: linear-gradient(135deg, #ffd54f, #ff9800) !important;
+  color: #211914 !important;
+  font-weight: 800 !important;
+}
+
 @media (max-width: 520px) {
   .ruleta-modal-card {
     padding: 24px 18px;
