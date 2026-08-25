@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import RuletaModal from "../ruleta-modal";
+import UrgencyModal from "./urgency-modal";
 
 interface CheckoutProps {
   edition: "esencial" | "completa";
@@ -888,8 +889,12 @@ function CheckoutClientInternal({
           </div>
         </div>
 
-        {/* Modal da Roleta de Descontos (Ativado em Exit-Intent ou Back-Redirect apenas no Checkout quando a compra não for concluída) */}
-        <RuletaModal disabled={status === "approved" || status === "sending_email" || status === "email_input"} />
+        {/* Quando já estiver com desconto de 8 mil pesos, ativa o Modal de Tempo Acabando; caso contrário, ativa a Roleta */}
+        {is8kDiscount ? (
+          <UrgencyModal disabled={status === "approved" || status === "sending_email" || status === "email_input"} />
+        ) : (
+          <RuletaModal disabled={status === "approved" || status === "sending_email" || status === "email_input"} />
+        )}
       </div>
     </main>
   );

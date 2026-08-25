@@ -2797,3 +2797,219 @@ details>p { max-width:720px; margin:0 0 28px 62px; color:#6a6058; line-height:1.
     width: 195px;
   }
 }
+
+
+/* ==========================================================================
+   URGENCY MODAL (TEMPO ESGOTANDO NO CHECKOUT 8K)
+   ========================================================================== */
+
+.urgency-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(18, 12, 9, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 16px;
+  animation: ruletaFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+}
+
+.urgency-modal-card {
+  position: relative;
+  width: min(520px, 100%);
+  background: #fdfbf7;
+  border-radius: 18px;
+  padding: 32px 26px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(220, 38, 38, 0.3);
+  animation: ruletaCardZoom 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: center;
+  color: var(--ink);
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+.urgency-alert-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fef2f2;
+  border: 1.5px solid #fecaca;
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 6px 14px;
+  border-radius: 99px;
+  margin-bottom: 16px;
+}
+
+.urgency-icon-pulse {
+  font-size: 14px;
+  animation: pulse 1.2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+}
+
+.urgency-headline {
+  font-family: var(--font-fraunces), "Fraunces", Georgia, serif;
+  font-size: clamp(1.4rem, 4vw, 1.85rem);
+  line-height: 1.15;
+  margin: 0 0 16px;
+  color: #1e1511;
+  font-weight: 400;
+}
+
+.urgency-headline em {
+  color: #dc2626;
+  font-style: italic;
+  font-weight: 600;
+}
+
+.urgency-timer-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: #1c1511;
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.urgency-timer-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+.urgency-timer-digits {
+  font-family: var(--font-fraunces), "Fraunces", monospace;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #f59e0b;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+
+.urgency-desc {
+  font-size: 14px;
+  color: #574c43;
+  line-height: 1.5;
+  margin: 0 0 18px;
+}
+
+.urgency-desc strong {
+  color: #dc2626;
+}
+
+.urgency-recap-box {
+  background: #fff;
+  border: 1.5px solid rgba(20, 93, 61, 0.25);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: left;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.urgency-recap-title {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #145d3d;
+}
+
+.urgency-recap-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #334155;
+}
+
+.urgency-recap-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.urgency-price-tag {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-top: 1px dashed rgba(20, 93, 61, 0.2);
+  padding-top: 10px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.urgency-price-tag strong {
+  font-family: var(--font-fraunces), serif;
+  font-size: 24px;
+  color: #145d3d;
+  font-weight: 700;
+}
+
+.urgency-price-tag del {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.urgency-cta-btn {
+  width: 100%;
+  padding: 16px 20px;
+  font-size: 15px;
+  font-weight: 700;
+  background: #145d3d;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgba(20, 93, 61, 0.35);
+  transition: all 0.25s ease;
+}
+
+.urgency-cta-btn:hover {
+  background: #0f4930;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(20, 93, 61, 0.45);
+}
+
+.urgency-footer-note {
+  margin: 14px 0 0;
+  font-size: 11px;
+  color: #786d65;
+  line-height: 1.4;
+}
+
+@media (max-width: 480px) {
+  .urgency-modal-card {
+    padding: 24px 18px;
+  }
+  .urgency-timer-digits {
+    font-size: 1.85rem;
+  }
+  .urgency-cta-btn {
+    font-size: 13px;
+    padding: 14px 16px;
+  }
+}
