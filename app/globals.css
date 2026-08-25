@@ -2501,3 +2501,189 @@ details>p { max-width:720px; margin:0 0 28px 62px; color:#6a6058; line-height:1.
   }
 }
 
+
+/* ==========================================================================
+   FAN CAROUSEL – Depoimentos Sociais
+   ========================================================================== */
+
+.fan-carousel-section {
+  width: 100%;
+  padding: 48px 0 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+.fan-carousel-stage {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.fan-carousel-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  width: 100%;
+  height: 420px;
+}
+
+.fan-card {
+  position: absolute;
+  width: 200px;
+  aspect-ratio: 9 / 16;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 8px 36px rgba(33,25,20,0.22), 0 2px 8px rgba(33,25,20,0.12);
+  cursor: pointer;
+  will-change: transform;
+  transform-origin: center bottom;
+  bottom: 0;
+  background: var(--ink);
+  border: 2px solid rgba(255,255,255,0.15);
+  transition: box-shadow 0.3s;
+}
+
+.fan-card:hover {
+  box-shadow: 0 16px 48px rgba(33,25,20,0.32), 0 4px 12px rgba(33,25,20,0.18);
+}
+
+.fan-card-link {
+  display: block;
+}
+
+.fan-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.fan-card-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+  max-width: none;
+  height: 100%;
+}
+
+/* Pagination Controls */
+.fan-carousel-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 8px;
+}
+
+.fan-arrow-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(33,25,20,0.15);
+  background: rgba(33,25,20,0.05);
+  color: rgba(33,25,20,0.5);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.25s, color 0.25s, background 0.25s;
+  backdrop-filter: blur(8px);
+  outline: none;
+  padding: 0;
+}
+
+.fan-arrow-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.fan-arrow-btn:hover {
+  border-color: rgba(33,25,20,0.3);
+  color: rgba(33,25,20,0.8);
+  background: rgba(33,25,20,0.08);
+}
+
+.fan-dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.fan-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(33,25,20,0.15);
+  display: block;
+  transition: background 0.3s, transform 0.3s;
+}
+
+.fan-dot-active {
+  background: rgba(33,25,20,0.7);
+  transform: scale(1.3);
+}
+
+/* Fan Carousel Section Wrapper in page */
+.fan-section {
+  padding: 0 0 0;
+  border-top: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.fan-section-heading {
+  width: min(1280px,calc(100% - 48px));
+  margin: 0 auto;
+  padding-top: 80px;
+}
+
+.fan-section-heading p.eyebrow {
+  margin-bottom: 14px;
+}
+
+.fan-section-heading h2 {
+  margin-bottom: 12px;
+}
+
+.fan-section-heading p.fan-lead {
+  font-size: 17px;
+  color: rgba(33,25,20,0.72);
+  margin: 0;
+  max-width: 520px;
+  line-height: 1.5;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .fan-carousel-container {
+    height: 340px;
+  }
+
+  .fan-card {
+    width: 140px;
+  }
+
+  .fan-carousel-section {
+    padding: 28px 0 36px;
+  }
+}
+
+@media (max-width: 380px) {
+  .fan-carousel-container {
+    height: 300px;
+  }
+
+  .fan-card {
+    width: 120px;
+  }
+}
