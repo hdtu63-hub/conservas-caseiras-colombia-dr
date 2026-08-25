@@ -202,64 +202,71 @@ export default function RuletaModal({ disabled = false }: RuletaModalProps) {
     return () => clearInterval(interval);
   }, [step]);
 
-  // Backredirect & Exit Intent Setup
+  // Backredirect & Exit Intent Setup (Compatível com iPhone iOS Safari e Android)
   useEffect(() => {
     if (typeof window === "undefined" || disabled) return;
 
+    // 1. Inserir estado no histórico imediatamente e reforçar ao primeiro toque
+    const pushBackState = () => {
+      try {
+        window.history.pushState({ isBackBlocked: true, time: Date.now() }, "", window.location.href);
+      } catch {}
+    };
+
+    pushBackState();
+
+    // No iPhone (iOS Safari), eventos de touch/scroll ativam a pilha de histórico com segurança
+    const armTrigger = () => {
+      pushBackState();
+    };
+
+    window.addEventListener("touchstart", armTrigger, { passive: true, once: true });
+    window.addEventListener("scroll", armTrigger, { passive: true, once: true });
+    window.addEventListener("click", armTrigger, { passive: true, once: true });
+
+    // 2. Interceptar o botão voltar do navegador / celular
+    const handlePopState = (e: PopStateEvent) => {
+      e?.preventDefault?.();
+      setIsOpen(true);
+      pushBackState();
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    // 3. Suporte ao BFCache do Safari no iOS (ao voltar por gesto de swipe)
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        pushBackState();
+        setIsOpen(true);
+      }
+    };
+    window.addEventListener("pageshow", handlePageShow);
+
+    // 4. Exit Intent no Desktop (cursor saindo pelo topo)
+    const handleMouseLeave = (e: MouseEvent) => {
+      if (e.clientY <= 8) {
+        setIsOpen(true);
+      }
+    };
+    document.addEventListener("mouseleave", handleMouseLeave);
+
+    // 5. Custom Event para abrir programaticamente
     const handleCustomOpen = () => {
       setIsOpen(true);
     };
     window.addEventListener("open-ruleta-modal", handleCustomOpen);
 
-    const handleLinkClick = (e: MouseEvent) => {
-      const target = (e.target as HTMLElement).closest("a");
-      if (target && target.href) {
-        const url = new URL(target.href, window.location.href);
-        if (url.pathname.startsWith("/checkout") || target.href.includes("#")) {
-          isNavigatingInternally.current = true;
-        }
-      }
-    };
-    document.addEventListener("click", handleLinkClick, true);
-
-    try {
-      if (window.history && window.history.pushState) {
-        window.history.pushState({ page: "conservas_active_view" }, "", window.location.href);
-      }
-    } catch {}
-
-    const handlePopState = () => {
-      if (isNavigatingInternally.current) {
-        isNavigatingInternally.current = false;
-        return;
-      }
-      hasTriggeredRef.current = true;
-      setIsOpen(true);
-      try {
-        window.history.pushState({ page: "conservas_discount_locked" }, "", window.location.href);
-      } catch {}
-    };
-
-    window.addEventListener("popstate", handlePopState);
-
-    const handleMouseLeave = (e: MouseEvent) => {
-      if (isNavigatingInternally.current) return;
-      if (e.clientY <= 8) {
-        hasTriggeredRef.current = true;
-        setIsOpen(true);
-      }
-    };
-
-    document.addEventListener("mouseleave", handleMouseLeave);
-
     return () => {
-      window.removeEventListener("open-ruleta-modal", handleCustomOpen);
-      document.removeEventListener("click", handleLinkClick, true);
+      window.removeEventListener("touchstart", armTrigger);
+      window.removeEventListener("scroll", armTrigger);
+      window.removeEventListener("click", armTrigger);
       window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("pageshow", handlePageShow);
       document.removeEventListener("mouseleave", handleMouseLeave);
+      window.removeEventListener("open-ruleta-modal", handleCustomOpen);
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, []);
+  }, [disabled]);
 
   // 1º GIRO: Suspense no 5%, hesitação no pino e parada no cantinho dos 75% (298°)
   const handleSpin1 = () => {
