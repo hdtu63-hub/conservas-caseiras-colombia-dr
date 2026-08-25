@@ -11,25 +11,27 @@ interface Slice {
   isWinner?: boolean;
 }
 
+// Ordem das fatias ao redor da roleta (começa em BONO EXTRA no topo às 12h)
 const SLICES: Slice[] = [
-  { text: "75% DESCUENTO", subtext: "¡PREMIO MAYOR!", bgColor: "#c15542", textColor: "#ffffff", isWinner: true },
+  { text: "BONO EXTRA", subtext: "1 Guía Gratis", bgColor: "#e5ae52", textColor: "#211914" },
   { text: "10% OFF", bgColor: "#211914", textColor: "#f4f0e7" },
   { text: "30% OFF", bgColor: "#145d3d", textColor: "#ffffff" },
-  { text: "BONO EXTRA", subtext: "1 Guía Gratis", bgColor: "#e5ae52", textColor: "#211914" },
   { text: "50% OFF", bgColor: "#9a4b2f", textColor: "#ffffff" },
   { text: "20% OFF", bgColor: "#211914", textColor: "#f4f0e7" },
   { text: "CASI GANAS", subtext: "¡Intenta!", bgColor: "#145d3d", textColor: "#ffffff" },
   { text: "5% DESCUENTO", subtext: "Por poco...", bgColor: "#38291f", textColor: "#ffe082" },
+  { text: "75% DESCUENTO", subtext: "¡PREMIO MAYOR!", bgColor: "#c15542", textColor: "#ffffff", isWinner: true },
 ];
 
 export default function RuletaModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
   const [step, setStep] = useState<"spin" | "win_75" | "downsell_8k">("spin");
-  const [needleAngle, setNeedleAngle] = useState(0);
+  const [needleAngle, setNeedleAngle] = useState(0); // Começa apontando para BONO EXTRA às 12h
   const [activeSliceIndex, setActiveSliceIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutos
   const [timeLeft8k, setTimeLeft8k] = useState(300); // 5 minutos
+  const [pointerBounce, setPointerBounce] = useState(false);
 
   const confettiCanvasRef = useRef<HTMLCanvasElement>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -61,9 +63,8 @@ export default function RuletaModal() {
       const gain = ctx.createGain();
       osc.type = "triangle";
 
-      // Frecuencia más pesada y grave cuando va lento (realismo de ruleta pesada)
-      const baseFreq = 480 + Math.min(280, speedRatio * 320);
-      osc.frequency.setValueAtTime(baseFreq + Math.random() * 40, ctx.currentTime);
+      const baseFreq = 460 + Math.min(280, speedRatio * 340);
+      osc.frequency.setValueAtTime(baseFreq + Math.random() * 30, ctx.currentTime);
 
       const vol = Math.max(0.04, Math.min(0.12, 0.05 + speedRatio * 0.07));
       gain.gain.setValueAtTime(vol, ctx.currentTime);
@@ -238,15 +239,20 @@ export default function RuletaModal() {
     };
   }, []);
 
-  // Función para girar la aguja de la ruleta con FÍSICA 100% REALISTA Y CONTINUA
+  // Función para girar la aguja de la ruleta:
+  // Começa no BONO EXTRA (0°), gira 6 voltas, passa lentamente no 5%, quase volta no pino e para no cantinho dos 75% (298°)
   const handleSpin = () => {
     if (isSpinning || step !== "spin") return;
     setIsSpinning(true);
     getAudioContext();
 
-    // 7 vueltas completas = 2520 grados (termina exactamente a las 12:00 en 75% DESCUENTO)
-    const targetDegrees = 360 * 7;
-    const spinDuration = 6200; // 6.2 segundos de giro continuo
+    // Pino divisor entre 5% (Slice 6) e 75% (Slice 7) = 292.5°
+    // Parada final no cantinho dos 75% = 298° (apenas 5.5° após o pino!)
+    const totalTurns = 6;
+    const finalTargetAngle = totalTurns * 360 + 298; // 2458°
+    const pin5To75 = totalTurns * 360 + 292.5; // 2452.5°
+
+    const spinDuration = 6600; // 6.6 segundos de puro suspense
     const startTime = performance.now();
     lastPinRef.current = -1;
 
@@ -254,52 +260,54 @@ export default function RuletaModal() {
       const elapsed = now - startTime;
       const progress = Math.min(1, elapsed / spinDuration);
 
-      // Curva física continua C^2: Desaceleración exponencial realista (sin saltos bruscos)
-      // Base: f(p) = 1 - (1 - p)^4.5
-      // Esta curva garantiza que la velocidad disminuye de manera natural y continua en cada milisegundo
-      const ease = 1 - Math.pow(1 - progress, 4.5);
-      let currentDeg = ease * targetDegrees;
+      let currentDeg = 0;
 
-      // Micro-resistencia elástica de los pines (la aguja se flexiona ligeramente al pasar cada divisor)
-      const pinSpacing = 45;
-      const pinPhase = (currentDeg + 22.5) % pinSpacing;
-      let pinFlexOffset = 0;
-      if (pinPhase > 38) {
-        // La aguja empuja el pin entrante y se frena un milímetro
-        pinFlexOffset = -Math.min(2.2, (pinPhase - 38) * 0.35);
-      } else if (pinPhase < 7) {
-        // La aguja salta el pin hacia adelante
-        pinFlexOffset = Math.min(1.8, (7 - pinPhase) * 0.25);
+      if (progress < 0.70) {
+        // Fase 1 (0% a 70%): Giro rápido passando por todas as fatias com desaceleração contínua suave
+        const pNorm = progress / 0.70;
+        const ease = 1 - Math.pow(1 - pNorm, 3.4);
+        currentDeg = ease * (pin5To75 - 38); // Chega ao início da fatia de 5% (2414°)
+      } else if (progress < 0.88) {
+        // Fase 2 (70% a 88%): Movimento super lento e agonizante atravessando o 5%
+        const pNorm = (progress - 0.70) / (0.88 - 0.70);
+        const ease = Math.sin(pNorm * (Math.PI / 2));
+        currentDeg = (pin5To75 - 38) + ease * 36.8; // Vai de 2414° até 2450.8° (a 1.7° do pino!)
+      } else if (progress < 0.96) {
+        // Fase 3 (88% a 96%): Hesitação no pino divisor - quase para e quase volta para o 5%!
+        const pNorm = (progress - 0.88) / (0.96 - 0.88);
+        const creep = (pin5To75 - 1.2) + pNorm * 3.0;
+        // Leve micro-oscilação de hesitação no pino
+        const wobble = Math.sin(pNorm * Math.PI * 2) * 0.35;
+        currentDeg = creep + wobble;
+      } else {
+        // Fase 4 (96% a 100%): Vence o pino e frena suavemente no cantinho dos 75% (298°)
+        const pNorm = (progress - 0.96) / (1 - 0.96);
+        const settle = 1 - Math.pow(1 - pNorm, 2);
+        currentDeg = (pin5To75 + 1.8) + settle * (finalTargetAngle - (pin5To75 + 1.8));
       }
 
-      // Micro-rebote amortiguado al llegar al final (0.97 a 1.0)
-      if (progress > 0.97) {
-        const settleProgress = (progress - 0.97) / 0.03;
-        const damp = Math.exp(-settleProgress * 5) * Math.sin(settleProgress * Math.PI * 3);
-        pinFlexOffset += damp * 1.5;
-      }
+      setNeedleAngle(currentDeg);
 
-      const finalVisualAngle = currentDeg + pinFlexOffset;
-      setNeedleAngle(finalVisualAngle);
-
-      // Determinar qué fatia está apuntando la aguja en este instante
-      const normalizedAngle = (finalVisualAngle % 360 + 360) % 360;
+      // Determinar a fatia ativa no momento
+      const normalizedAngle = (currentDeg % 360 + 360) % 360;
       const currentSlice = Math.floor((normalizedAngle + 22.5) / 45) % SLICES.length;
       setActiveSliceIndex(currentSlice);
 
-      // Disparar sonido de tick al cruzar cada divisor
+      // Som de tick ao cruzar os pinos divisores
       const pinIndex = Math.floor((currentDeg + 22.5) / 45);
       if (pinIndex !== lastPinRef.current) {
         lastPinRef.current = pinIndex;
-        const currentSpeedRatio = Math.max(0.05, 1 - progress);
+        const currentSpeedRatio = Math.max(0.04, 1 - progress);
         playTickSound(currentSpeedRatio);
+        setPointerBounce(true);
+        setTimeout(() => setPointerBounce(false), 40);
       }
 
       if (progress < 1) {
         animFrameRef.current = requestAnimationFrame(animateNeedle);
       } else {
-        setNeedleAngle(2520);
-        setActiveSliceIndex(0);
+        setNeedleAngle(finalTargetAngle);
+        setActiveSliceIndex(7); // Slice 7 = 75% DESCUENTO
         setIsSpinning(false);
         setStep("win_75");
         playWinSound();
@@ -328,7 +336,7 @@ export default function RuletaModal() {
 
   if (!isOpen) return null;
 
-  // Renderizar la Ruleta con Seta Giratória en formato SVG vectorial
+  // Renderizar la Ruleta con Seta Giratória em SVG
   const renderSvgWheel = () => {
     const center = 160;
     const radius = 145;
@@ -379,7 +387,7 @@ export default function RuletaModal() {
                 strokeWidth={isCurrentActive ? "3.5" : "1.5"}
                 style={{
                   filter: isCurrentActive ? "brightness(1.18)" : "none",
-                  transition: "filter 0.15s ease, stroke 0.15s ease",
+                  transition: "filter 0.12s ease, stroke 0.12s ease",
                 }}
               />
               {/* Texto da fatia alinhado radialmente */}
