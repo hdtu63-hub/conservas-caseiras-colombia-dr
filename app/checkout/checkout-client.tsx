@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
+import RuletaModal from "../ruleta-modal";
 
 interface CheckoutProps {
   edition: "esencial" | "completa";
@@ -234,7 +235,16 @@ function CheckoutClientInternal({
       <div className="checkout-container">
         {/* Navigation & Breadcrumb */}
         <div className="checkout-nav-row">
-          <a href="/" className="checkout-back">
+          <a
+            href="/"
+            onClick={(e) => {
+              if (!is8kDiscount) {
+                e.preventDefault();
+                window.dispatchEvent(new CustomEvent("open-ruleta-modal"));
+              }
+            }}
+            className="checkout-back"
+          >
             <span aria-hidden="true">←</span> Volver a la página principal
           </a>
         </div>
@@ -835,6 +845,9 @@ function CheckoutClientInternal({
             <span>Acceso Ilimitado y de por Vida</span>
           </div>
         </div>
+
+        {/* Modal da Roleta de Descontos (Ativado em Exit-Intent ou Back-Redirect no Checkout) */}
+        <RuletaModal />
       </div>
     </main>
   );

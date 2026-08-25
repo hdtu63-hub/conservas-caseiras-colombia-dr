@@ -202,6 +202,11 @@ export default function RuletaModal() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    const handleCustomOpen = () => {
+      setIsOpen(true);
+    };
+    window.addEventListener("open-ruleta-modal", handleCustomOpen);
+
     const handleLinkClick = (e: MouseEvent) => {
       const target = (e.target as HTMLElement).closest("a");
       if (target && target.href) {
@@ -215,12 +220,14 @@ export default function RuletaModal() {
 
     try {
       if (window.history && window.history.pushState) {
-        window.history.pushState({ page: "conservas_home_active" }, "", window.location.href);
+        window.history.pushState({ page: "conservas_active_view" }, "", window.location.href);
       }
     } catch {}
 
     const handlePopState = () => {
-      if (isNavigatingInternally.current) return;
+      if (isNavigatingInternally.current) {
+        isNavigatingInternally.current = false;
+      }
       hasTriggeredRef.current = true;
       setIsOpen(true);
       try {
@@ -231,8 +238,7 @@ export default function RuletaModal() {
     window.addEventListener("popstate", handlePopState);
 
     const handleMouseLeave = (e: MouseEvent) => {
-      if (isNavigatingInternally.current) return;
-      if (e.clientY <= 8 && !hasTriggeredRef.current) {
+      if (e.clientY <= 8) {
         hasTriggeredRef.current = true;
         setIsOpen(true);
       }
@@ -241,6 +247,7 @@ export default function RuletaModal() {
     document.addEventListener("mouseleave", handleMouseLeave);
 
     return () => {
+      window.removeEventListener("open-ruleta-modal", handleCustomOpen);
       document.removeEventListener("click", handleLinkClick, true);
       window.removeEventListener("popstate", handlePopState);
       document.removeEventListener("mouseleave", handleMouseLeave);
@@ -687,6 +694,7 @@ export default function RuletaModal() {
             {/* Botón de Checkout */}
             <a
               href="/checkout/completa?descuento=75"
+              onClick={() => setIsOpen(false)}
               className="button ruleta-checkout-cta-btn"
             >
               <span>¡QUIERO ESTE DESCUENTO AHORA!</span>
@@ -837,6 +845,7 @@ export default function RuletaModal() {
             {/* Botón al Checkout de $8.000 */}
             <a
               href="/checkout/completa?descuento=8k"
+              onClick={() => setIsOpen(false)}
               className="button ruleta-checkout-cta-btn btn-8k"
             >
               <span>¡QUIERO TODO POR SOLO $8.000 COP!</span>
