@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
         const result = JSON.parse(jsonMatch[0]);
 
         if (result.es_comprobante === true) {
-          const fallbackMonto = amount || (edition.includes("75off") || discount === "75" ? "14000" : (edition === "esencial" ? "20000" : "28000"));
+          const fallbackMonto = amount || (edition.includes("8k") || discount === "8k" || discount === "8000" ? "8000" : (edition.includes("75off") || discount === "75" ? "14000" : (edition === "esencial" ? "20000" : "28000")));
           const montoStr = result.monto ? String(result.monto) : fallbackMonto;
           const meta: Record<string, string> = { edition, monto: montoStr };
           if (discount) meta.discount = discount;

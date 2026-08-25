@@ -15,6 +15,12 @@ interface CheckoutProps {
   bonuses?: string[];
 }
 
+const EXTRA_3_BONUSES = [
+  "✦ Bono Extra 05: Recetario Secreto de Encurtidos Express ($15.000)",
+  "✦ Bono Extra 06: Plantilla de Control de Vencimientos y Lotes ($12.000)",
+  "✦ Bono Extra 07: Guía de Empaque y Presentación para Regalo ($14.000)",
+];
+
 function CheckoutClientInternal({
   edition,
   title,
@@ -29,12 +35,16 @@ function CheckoutClientInternal({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Detectar cupón de 75% OFF de la ruleta
-  const isDiscounted = edition === "completa" && (searchParams.get("descuento") === "75" || searchParams.get("promo") === "75");
-  const activePrice = isDiscounted ? "$14.000" : price;
-  const activeOriginalPrice = isDiscounted ? "$167.000" : originalPrice;
-  const activeSavings = isDiscounted ? "$153.000" : savings;
-  const numericAmount = isDiscounted ? 14000 : (edition === "esencial" ? 20000 : 28000);
+  // Detectar cupones de descuento
+  const is8kDiscount = edition === "completa" && (searchParams.get("descuento") === "8k" || searchParams.get("descuento") === "8000" || searchParams.get("promo") === "8k");
+  const is75Discount = !is8kDiscount && edition === "completa" && (searchParams.get("descuento") === "75" || searchParams.get("promo") === "75");
+  const isDiscounted = is8kDiscount || is75Discount;
+
+  const activePrice = is8kDiscount ? "$8.000" : (is75Discount ? "$14.000" : price);
+  const activeOriginalPrice = is8kDiscount ? "$208.000" : (is75Discount ? "$167.000" : originalPrice);
+  const activeSavings = is8kDiscount ? "$200.000" : (is75Discount ? "$153.000" : savings);
+  const numericAmount = is8kDiscount ? 8000 : (is75Discount ? 14000 : (edition === "esencial" ? 20000 : 28000));
+  const activeBonuses = is8kDiscount ? [...bonuses, ...EXTRA_3_BONUSES] : bonuses;
 
   const [activeTab, setActiveTab] = useState<"nequi" | "breb">("nequi");
   const [copied, setCopied] = useState<string | null>(null);
@@ -68,12 +78,13 @@ function CheckoutClientInternal({
   }, [status, router]);
 
   useEffect(() => {
+    const promoSuffix = is8kDiscount ? "_8k" : (is75Discount ? "_75off" : "");
     fetch("/api/track", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: `checkout_view_${edition}${isDiscounted ? "_75off" : ""}` }),
+      body: JSON.stringify({ type: `checkout_view_${edition}${promoSuffix}` }),
     }).catch(() => {});
-  }, [edition, isDiscounted]);
+  }, [edition, is8kDiscount, is75Discount]);
 
   const copyToClipboard = useCallback(async (text: string, label: string) => {
     try {
@@ -111,11 +122,13 @@ function CheckoutClientInternal({
 
     setStatus("uploading");
 
+    const editionParam = is8kDiscount ? "completa_8k" : (is75Discount ? "completa_75off" : edition);
     const formData = new FormData();
     formData.append("receipt", file);
-    formData.append("edition", isDiscounted ? "completa_75off" : edition);
+    formData.append("edition", editionParam);
     formData.append("amount", String(numericAmount));
-    if (isDiscounted) formData.append("discount", "75");
+    if (is8kDiscount) formData.append("discount", "8k");
+    else if (is75Discount) formData.append("discount", "75");
 
     await new Promise((r) => setTimeout(r, 700));
     setStatus("verifying");
@@ -136,7 +149,7 @@ function CheckoutClientInternal({
           } catch (e) {}
 
           (window as any).fbq("track", "Purchase", {
-            content_name: title,
+            content_name: is8kDiscount ? `${title} + 7 Bonos` : title,
             currency: "COP",
             value: numericAmount,
             ...utms,
@@ -167,7 +180,11 @@ function CheckoutClientInternal({
       await fetch("/api/send-access", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, edition, discount: isDiscounted ? "75" : undefined }),
+        body: JSON.stringify({
+          email,
+          edition: is8kDiscount ? "completa_8k" : edition,
+          discount: is8kDiscount ? "8k" : (is75Discount ? "75" : undefined),
+        }),
       });
     } catch {
       // Continua normalmente para a confirmação
@@ -181,11 +198,13 @@ function CheckoutClientInternal({
 
     setStatus("sending_email_rejected");
 
+    const editionParam = is8kDiscount ? "completa_8k" : (is75Discount ? "completa_75off" : edition);
     const formData = new FormData();
     formData.append("email", email);
-    formData.append("edition", isDiscounted ? "completa_75off" : edition);
+    formData.append("edition", editionParam);
     formData.append("receipt", file);
-    if (isDiscounted) formData.append("discount", "75");
+    if (is8kDiscount) formData.append("discount", "8k");
+    else if (is75Discount) formData.append("discount", "75");
 
     try {
       // Envia email pro admin com o comprovante em anexo
@@ -200,7 +219,7 @@ function CheckoutClientInternal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: "payment_manual_review",
-          metadata: { email, edition, isDiscounted: String(isDiscounted), price: activePrice },
+          metadata: { email, edition: editionParam, isDiscounted: String(isDiscounted), price: activePrice },
         }),
       });
     } catch {
@@ -236,8 +255,23 @@ function CheckoutClientInternal({
           </div>
         )}
 
-        {/* Banner de Descuento Activado de la Ruleta */}
-        {isDiscounted && (
+        {/* Banners de Descuento Activados */}
+        {is8kDiscount && (
+          <div className="checkout-discount-applied-banner discount-8k-banner">
+            <div className="discount-applied-icon">🔥</div>
+            <div className="discount-applied-content">
+              <div className="discount-applied-title">
+                <strong>¡SUBSIDIO FINAL APLICADO: COLECCIÓN COMPLETA + 7 BONOS POR $8.000 COP!</strong>
+                <span className="discount-badge-active badge-8k">7 BONOS + TODO POR $8.000</span>
+              </div>
+              <p>
+                Has desbloqueado el subsidio máximo. Tu <strong>Colección Completa + 7 Bonos VIP</strong> queda en solo <strong>$8.000 COP</strong> (Ahorras $200.000 COP hoy).
+              </p>
+            </div>
+          </div>
+        )}
+
+        {is75Discount && (
           <div className="checkout-discount-applied-banner">
             <div className="discount-applied-icon">🎉</div>
             <div className="discount-applied-content">
@@ -658,7 +692,11 @@ function CheckoutClientInternal({
                 </div>
                 <div className="product-info-summary">
                   <span className="summary-eyebrow">
-                    {edition === "completa" ? "Colección Completa + 4 Bonos" : "Guía Esencial de Conservas"}
+                    {is8kDiscount
+                      ? "Colección Completa + 7 Bonos VIP"
+                      : edition === "completa"
+                      ? "Colección Completa + 4 Bonos"
+                      : "Guía Esencial de Conservas"}
                   </span>
                   <h4 className="summary-product-title">{title}</h4>
                   <div className="summary-rating">
@@ -676,7 +714,9 @@ function CheckoutClientInternal({
                 </div>
                 <div className="breakdown-row discount-row">
                   <span>Descuento aplicado hoy:</span>
-                  <span className="discount-badge">- {activeSavings} {isDiscounted && "(75% OFF)"}</span>
+                  <span className="discount-badge">
+                    - {activeSavings} {is8kDiscount ? "(OFERTA $8.000)" : is75Discount ? "(75% OFF)" : ""}
+                  </span>
                 </div>
                 <div className="breakdown-row total-row">
                   <div>
@@ -703,14 +743,14 @@ function CheckoutClientInternal({
                 </ul>
               </div>
 
-              {/* Bonuses List if any */}
-              {bonuses.length > 0 && (
+              {/* Bonuses List */}
+              {activeBonuses.length > 0 && (
                 <div className="summary-bonuses-box">
                   <div className="bonuses-box-title">
-                    <span>🎁 4 Bonos Extras Incluidos Gratis:</span>
+                    <span>🎁 {is8kDiscount ? "7 Bonos Extras Incluidos Gratis:" : "4 Bonos Extras Incluidos Gratis:"}</span>
                   </div>
                   <ul className="bonuses-list">
-                    {bonuses.map((b) => (
+                    {activeBonuses.map((b) => (
                       <li key={b}>
                         <span className="bonus-star">✦</span>
                         <span>{b}</span>

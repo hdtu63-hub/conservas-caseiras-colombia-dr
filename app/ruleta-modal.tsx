@@ -25,12 +25,12 @@ const SLICES: Slice[] = [
 export default function RuletaModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
-  const [hasWon, setHasWon] = useState(false);
+  const [step, setStep] = useState<"spin" | "win_75" | "downsell_8k">("spin");
   const [rotation, setRotation] = useState(0);
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutos
+  const [timeLeft8k, setTimeLeft8k] = useState(300); // 5 minutos
   const [pointerBounce, setPointerBounce] = useState(false);
 
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const confettiCanvasRef = useRef<HTMLCanvasElement>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const isNavigatingInternally = useRef(false);
@@ -94,110 +94,6 @@ export default function RuletaModal() {
       // Ignorar errores de audio
     }
   }, [getAudioContext]);
-
-  // Dibujar la Ruleta en el Canvas
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const size = 360;
-    canvas.width = size * 2;
-    canvas.height = size * 2;
-    ctx.scale(2, 2);
-
-    const center = size / 2;
-    const radius = center - 12;
-    const numSlices = SLICES.length;
-    const sliceAngle = (2 * Math.PI) / numSlices;
-
-    ctx.clearRect(0, 0, size, size);
-
-    // Borde exterior dorado y fondo
-    ctx.beginPath();
-    ctx.arc(center, center, radius + 8, 0, 2 * Math.PI);
-    ctx.fillStyle = "#211914";
-    ctx.fill();
-    ctx.lineWidth = 6;
-    ctx.strokeStyle = "#e5ae52";
-    ctx.stroke();
-
-    // Dibujar cada rebanada
-    SLICES.forEach((slice, i) => {
-      // El segmento 0 (75% DESCUENTO) se centra exactamente arriba (270 grados en canvas)
-      // Ajustamos el ángulo inicial para que el centro del slice 0 esté a -90° (top)
-      const startAngle = i * sliceAngle - Math.PI / 2 - sliceAngle / 2;
-      const endAngle = startAngle + sliceAngle;
-
-      ctx.beginPath();
-      ctx.moveTo(center, center);
-      ctx.arc(center, center, radius, startAngle, endAngle);
-      ctx.closePath();
-      ctx.fillStyle = slice.bgColor;
-      ctx.fill();
-
-      ctx.lineWidth = 1.5;
-      ctx.strokeStyle = "rgba(244, 240, 231, 0.35)";
-      ctx.stroke();
-
-      // Dibujar texto de la rebanada
-      ctx.save();
-      ctx.translate(center, center);
-      ctx.rotate(startAngle + sliceAngle / 2);
-      ctx.textAlign = "right";
-      ctx.fillStyle = slice.textColor;
-
-      if (slice.isWinner) {
-        ctx.font = "bold 13px 'DM Sans', sans-serif";
-        ctx.fillText(slice.text, radius - 16, 2);
-        if (slice.subtext) {
-          ctx.font = "bold 9px 'DM Sans', sans-serif";
-          ctx.fillStyle = "#ffe082";
-          ctx.fillText(slice.subtext, radius - 16, 14);
-        }
-      } else {
-        ctx.font = "600 12px 'DM Sans', sans-serif";
-        ctx.fillText(slice.text, radius - 18, 2);
-        if (slice.subtext) {
-          ctx.font = "bold 8.5px 'DM Sans', sans-serif";
-          ctx.fillStyle = slice.textColor === "#ffffff" ? "rgba(255,255,255,0.75)" : "rgba(33,25,20,0.75)";
-          ctx.fillText(slice.subtext, radius - 18, 13);
-        }
-      }
-      ctx.restore();
-    });
-
-    // Pequeñas luces decorativas en el borde
-    const numBulbs = 24;
-    for (let b = 0; b < numBulbs; b++) {
-      const bulbAngle = (b * (2 * Math.PI)) / numBulbs;
-      const bx = center + (radius + 4) * Math.cos(bulbAngle);
-      const by = center + (radius + 4) * Math.sin(bulbAngle);
-      ctx.beginPath();
-      ctx.arc(bx, by, 3, 0, 2 * Math.PI);
-      ctx.fillStyle = b % 2 === 0 ? "#fff3b0" : "#e5ae52";
-      ctx.fill();
-    }
-
-    // Centro de la ruleta (buje central dorado)
-    ctx.beginPath();
-    ctx.arc(center, center, 28, 0, 2 * Math.PI);
-    const grad = ctx.createRadialGradient(center - 5, center - 5, 2, center, center, 28);
-    grad.addColorStop(0, "#fff5cc");
-    grad.addColorStop(0.6, "#e5ae52");
-    grad.addColorStop(1, "#b37d22");
-    ctx.fillStyle = grad;
-    ctx.fill();
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "#211914";
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(center, center, 14, 0, 2 * Math.PI);
-    ctx.fillStyle = "#c15542";
-    ctx.fill();
-  }, []);
 
   // Animación de Confeti
   const fireConfetti = useCallback(() => {
@@ -266,20 +162,28 @@ export default function RuletaModal() {
     render();
   }, []);
 
-  // Temporizador de 10 minutos
+  // Temporizadores
   useEffect(() => {
-    if (!hasWon) return;
+    if (step !== "win_75") return;
     const interval = setInterval(() => {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(interval);
-  }, [hasWon]);
+  }, [step]);
+
+  useEffect(() => {
+    if (step !== "downsell_8k") return;
+    const interval = setInterval(() => {
+      setTimeLeft8k((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [step]);
 
   // Backredirect & Exit Intent Setup
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // 1. Marcar cuando el usuario hace clic en enlaces internos para no disparar el popup
+    // 1. Marcar cuando el usuario hace clic en enlaces internos
     const handleLinkClick = (e: MouseEvent) => {
       const target = (e.target as HTMLElement).closest("a");
       if (target && target.href) {
@@ -332,29 +236,25 @@ export default function RuletaModal() {
 
   // Función para girar la ruleta con física y suspenso
   const handleSpin = () => {
-    if (isSpinning || hasWon) return;
+    if (isSpinning || step !== "spin") return;
     setIsSpinning(true);
     getAudioContext();
 
     // 7 vueltas completas (2520 deg) = la aguja pasa por todos los descuentos,
-    // se desacelera fuertemente en 5% DESCUENTO (Slice 7) y al final se desliza y frena en 75% DESCUENTO (Slice 0)
+    // desacelera en 5% DESCUENTO (Slice 7) y al final frena en 75% DESCUENTO (Slice 0)
     const targetDegrees = 360 * 7;
     setRotation(targetDegrees);
 
-    const spinDuration = 5500; // 5.5 segundos de pura emoción
+    const spinDuration = 5500; // 5.5 segundos
     const startTime = performance.now();
     let lastPinIndex = -1;
 
-    // Seguimiento en tiempo real de los "ticks" y rebote de la aguja sincronizado con la rotación
     const trackTicks = (now: number) => {
       const elapsed = now - startTime;
       const progress = Math.min(1, elapsed / spinDuration);
 
-      // Aproximación del cubic-bezier(0.1, 0.9, 0.15, 1) para calcular el ángulo instantáneo
       const easeProgress = 1 - Math.pow(1 - progress, 4.4);
       const currentDegrees = easeProgress * targetDegrees;
-
-      // Cada 45 grados pasa un pin/división
       const currentPin = Math.floor((currentDegrees + 22.5) / 45);
 
       if (currentPin !== lastPinIndex) {
@@ -371,17 +271,24 @@ export default function RuletaModal() {
 
     animFrameRef.current = requestAnimationFrame(trackTicks);
 
-    // Al finalizar el giro completo
     setTimeout(() => {
       setIsSpinning(false);
-      setHasWon(true);
+      setStep("win_75");
       playWinSound();
       fireConfetti();
     }, spinDuration + 100);
   };
 
-  const handleClose = () => {
-    setIsOpen(false);
+  // Interceptar cierre para ofrecer la oferta de 8k
+  const handleCloseAttempt = () => {
+    if (step === "spin" || step === "win_75") {
+      // Abre la oferta ultra downsell de $8.000 COP
+      setStep("downsell_8k");
+      fireConfetti();
+    } else {
+      // Si ya está en la oferta de 8k, cierra definitivamente
+      setIsOpen(false);
+    }
   };
 
   const formatTimer = (seconds: number) => {
@@ -392,22 +299,124 @@ export default function RuletaModal() {
 
   if (!isOpen) return null;
 
+  // Renderizar la Ruleta en formato SVG vectorial 100% confiable
+  const renderSvgWheel = () => {
+    const center = 160;
+    const radius = 145;
+    const numSlices = SLICES.length;
+    const sliceAngleDeg = 360 / numSlices; // 45 deg
+
+    return (
+      <svg
+        viewBox="0 0 320 320"
+        className="ruleta-svg-wheel"
+        style={{
+          transform: `rotate(${rotation}deg)`,
+          transition: isSpinning ? "transform 5.5s cubic-bezier(0.1, 0.9, 0.15, 1)" : "none",
+        }}
+      >
+        <defs>
+          <radialGradient id="ruletaGoldHub" cx="40%" cy="40%" r="60%">
+            <stop offset="0%" stopColor="#fff8db" />
+            <stop offset="50%" stopColor="#e5ae52" />
+            <stop offset="100%" stopColor="#a87114" />
+          </radialGradient>
+        </defs>
+
+        {/* Borde exterior oscuro */}
+        <circle cx={center} cy={center} r={radius + 10} fill="#211914" />
+        <circle cx={center} cy={center} r={radius + 6} fill="none" stroke="#e5ae52" strokeWidth="5" />
+
+        {/* Fatias da Ruleta */}
+        {SLICES.map((slice, i) => {
+          const thetaDeg = -90 + i * sliceAngleDeg;
+          const a1Rad = ((thetaDeg - 22.5) * Math.PI) / 180;
+          const a2Rad = ((thetaDeg + 22.5) * Math.PI) / 180;
+          const x1 = center + radius * Math.cos(a1Rad);
+          const y1 = center + radius * Math.sin(a1Rad);
+          const x2 = center + radius * Math.cos(a2Rad);
+          const y2 = center + radius * Math.sin(a2Rad);
+
+          const pathData = `M ${center} ${center} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${radius} ${radius} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
+
+          return (
+            <g key={slice.text}>
+              <path
+                d={pathData}
+                fill={slice.bgColor}
+                stroke="rgba(244, 240, 231, 0.35)"
+                strokeWidth="1.5"
+              />
+              {/* Texto da fatia alinhado radialmente */}
+              <g transform={`rotate(${thetaDeg}, ${center}, ${center})`}>
+                <text
+                  x={center + radius - 14}
+                  y={center + (slice.subtext ? 1 : 4)}
+                  fill={slice.textColor}
+                  fontSize={slice.isWinner ? "12" : "11"}
+                  fontWeight={slice.isWinner ? "800" : "700"}
+                  fontFamily="'DM Sans', sans-serif"
+                  textAnchor="end"
+                >
+                  {slice.text}
+                </text>
+                {slice.subtext && (
+                  <text
+                    x={center + radius - 14}
+                    y={center + 12}
+                    fill={slice.textColor === "#ffffff" ? "#ffe082" : "rgba(33,25,20,0.8)"}
+                    fontSize="8"
+                    fontWeight="700"
+                    fontFamily="'DM Sans', sans-serif"
+                    textAnchor="end"
+                  >
+                    {slice.subtext}
+                  </text>
+                )}
+              </g>
+            </g>
+          );
+        })}
+
+        {/* Luzes decorativas */}
+        {Array.from({ length: 24 }).map((_, b) => {
+          const bulbAngle = (b * (2 * Math.PI)) / 24;
+          const bx = center + (radius + 6) * Math.cos(bulbAngle);
+          const by = center + (radius + 6) * Math.sin(bulbAngle);
+          return (
+            <circle
+              key={b}
+              cx={bx}
+              cy={by}
+              r="2.8"
+              fill={b % 2 === 0 ? "#fff3b0" : "#e5ae52"}
+            />
+          );
+        })}
+
+        {/* Centro da Ruleta (Buje dourado) */}
+        <circle cx={center} cy={center} r="26" fill="url(#ruletaGoldHub)" stroke="#211914" strokeWidth="2.5" />
+        <circle cx={center} cy={center} r="12" fill="#c15542" />
+      </svg>
+    );
+  };
+
   return (
     <div className="ruleta-overlay" role="dialog" aria-modal="true" aria-labelledby="ruleta-title">
       <canvas ref={confettiCanvasRef} className="ruleta-confetti-canvas" />
 
       <div className="ruleta-modal-card paper">
-        {/* Botón de cerrar discreto */}
+        {/* Botão de fechar */}
         <button
           type="button"
-          onClick={handleClose}
+          onClick={handleCloseAttempt}
           className="ruleta-close-btn"
           aria-label="Cerrar ventana"
         >
           ✕
         </button>
 
-        {!hasWon ? (
+        {step === "spin" && (
           /* ESTADO 1: INVITACIÓN A GIRAR LA RULETA */
           <div className="ruleta-step-spin">
             <div className="ruleta-header-badge">
@@ -423,7 +432,7 @@ export default function RuletaModal() {
               Tienes <strong>1 oportunidad exclusiva</strong> para desbloquear un beneficio único en la Colección Completa de Conservas Caseras.
             </p>
 
-            {/* Contenedor de la Ruleta */}
+            {/* Contenedor de la Ruleta SVG */}
             <div className="ruleta-wheel-wrapper">
               {/* Puntero Indicador */}
               <div className={`ruleta-pointer ${pointerBounce ? "bounce" : ""}`}>
@@ -438,15 +447,9 @@ export default function RuletaModal() {
                 </svg>
               </div>
 
-              {/* Canvas de la Ruleta con rotación CSS y curva de suspenso */}
-              <div
-                className="ruleta-canvas-container"
-                style={{
-                  transform: `rotate(${rotation}deg)`,
-                  transition: isSpinning ? "transform 5.5s cubic-bezier(0.1, 0.9, 0.15, 1)" : "none",
-                }}
-              >
-                <canvas ref={canvasRef} className="ruleta-canvas" />
+              {/* Render do SVG da Ruleta com rotação */}
+              <div className="ruleta-canvas-container">
+                {renderSvgWheel()}
               </div>
 
               {/* Botón Central de Girar */}
@@ -476,8 +479,10 @@ export default function RuletaModal() {
               🔒 Oferta 100% garantizada y válida solo para esta visita
             </p>
           </div>
-        ) : (
-          /* ESTADO 2: PREMIO OBTENIDO (75% DESCUENTO EN PAQUETE COMPLETO) */
+        )}
+
+        {step === "win_75" && (
+          /* ESTADO 2: PREMIO OBTENIDO (75% DESCUENTO EN PAQUETE COMPLETO - $14.000 COP) */
           <div className="ruleta-step-win">
             <div className="ruleta-win-badge">
               <span>🎉 ¡PREMIO DESBLOQUEADO CON ÉXITO!</span>
@@ -568,10 +573,113 @@ export default function RuletaModal() {
 
             <button
               type="button"
-              onClick={handleClose}
+              onClick={handleCloseAttempt}
               className="ruleta-dismiss-link"
             >
               No gracias, prefiero perder mi descuento del 75%
+            </button>
+          </div>
+        )}
+
+        {step === "downsell_8k" && (
+          /* ESTADO 3: OFERTA ULTRA DOWNSELL - $8.000 COP CON 7 BONOS (4 + 3 EXTRAS) */
+          <div className="ruleta-step-downsell">
+            <div className="ruleta-downsell-badge">
+              <span>🔥 SUBSIDIO EXCLUSIVO DE SALIDA ACTIVADO</span>
+            </div>
+
+            <h2 className="ruleta-win-title">
+              ¡ESPERA! Te lo dejamos por solo <em>$8.000 COP</em>
+            </h2>
+
+            <p className="ruleta-win-subtitle">
+              No queremos que te quedes sin aprender. Te entregamos la <strong>Colección Completa + los 4 Bonos Oficiales + 3 BONOS EXTRA EXCLUSIVOS (7 bonos en total)</strong> a precio de regalo:
+            </p>
+
+            {/* Tarjeta de la Oferta de $8.000 con 7 Bonos */}
+            <div className="ruleta-prize-card downsell-card-highlight">
+              <div className="ruleta-prize-top">
+                <div className="ruleta-prize-thumb">
+                  <Image
+                    src="/images/materials/01-guia-completa.jpg"
+                    alt="Colección Completa de Conservas + 7 Bonos"
+                    width={80}
+                    height={100}
+                    className="ruleta-prize-img"
+                  />
+                </div>
+                <div className="ruleta-prize-info">
+                  <span className="ruleta-prize-tag tag-8k">PAQUETE COMPLETO + 7 BONOS VIP</span>
+                  <h3 className="ruleta-prize-name">Colección Completa de Conservas</h3>
+                  <div className="ruleta-prize-included-8k">
+                    <span>✓ 100+ Recetas + Videoclases</span>
+                    <span>✓ 4 Bonos Oficiales ($78.000)</span>
+                    <strong className="extra-bonuses-label">🎁 + 3 BONOS EXTRAS DESBLOQUEADOS:</strong>
+                    <small>✦ Recetario Secreto Encurtidos Express ($15.000)</small>
+                    <small>✦ Plantilla Control Vencimientos ($12.000)</small>
+                    <small>✦ Guía Empaque y Regalos ($14.000)</small>
+                  </div>
+                </div>
+              </div>
+
+              {/* Comparación de Precios */}
+              <div className="ruleta-price-box">
+                <div className="ruleta-price-row">
+                  <span>Valor total con 7 bonos:</span>
+                  <del>$208.000 COP</del>
+                </div>
+                <div className="ruleta-price-row">
+                  <span>Precio de oferta ruleta:</span>
+                  <del>$14.000 COP</del>
+                </div>
+                <div className="ruleta-price-row ruleta-discount-highlight-8k">
+                  <span>Subsidio especial aplicado:</span>
+                  <strong className="ruleta-discount-tag">- $200.000 COP</strong>
+                </div>
+                <div className="ruleta-price-total">
+                  <div>
+                    <span className="ruleta-total-label">Total final hoy:</span>
+                    <small>Pago único · Acceso permanente</small>
+                  </div>
+                  <div className="ruleta-final-amount">
+                    <span className="ruleta-currency">$</span>
+                    <strong className="amount-8k">8.000</strong>
+                    <span className="ruleta-cop">COP</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Temporizador de Urgencia 8k */}
+            <div className="ruleta-timer-box timer-8k">
+              <span className="ruleta-timer-icon">⏳</span>
+              <p>
+                Esta oferta extrema de $8.000 expira en:{" "}
+                <strong className="ruleta-countdown">{formatTimer(timeLeft8k)}</strong>
+              </p>
+            </div>
+
+            {/* Botón de Redirección al Checkout de $8.000 */}
+            <a
+              href="/checkout/completa?descuento=8k"
+              className="button ruleta-checkout-cta-btn btn-8k"
+            >
+              <span>¡QUIERO TODO POR SOLO $8.000 COP!</span>
+              <b aria-hidden="true">→</b>
+            </a>
+
+            <div className="ruleta-trust-row">
+              <span>♢ Pago Seguro</span>
+              <span>⚡ Acceso Inmediato</span>
+              <span>↻ Garantía 30 Días</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="ruleta-dismiss-link"
+            >
+              No gracias, renuncio a la colección y a los 7 bonos por $8.000 COP
             </button>
           </div>
         )}
