@@ -1743,3 +1743,578 @@ details>p { max-width:720px; margin:0 0 28px 62px; color:#6a6058; line-height:1.
   line-height: 1.4 !important;
 }
 
+/* ==========================================================================
+   BACKREDIRECT / EXIT INTENT RULETA MODAL & DISCOUNT CHECKOUT STYLES
+   ========================================================================== */
+
+.ruleta-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(18, 12, 9, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 16px;
+  animation: ruletaFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+}
+
+@keyframes ruletaFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.ruleta-confetti-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 100005;
+}
+
+.ruleta-modal-card {
+  position: relative;
+  width: min(540px, 100%);
+  background: #fdfbf7;
+  border-radius: 16px;
+  padding: 32px 28px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(229, 174, 82, 0.35);
+  animation: ruletaCardZoom 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: center;
+  color: var(--ink);
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+@keyframes ruletaCardZoom {
+  from { opacity: 0; transform: scale(0.92) translateY(15px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.ruleta-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(33, 25, 20, 0.08);
+  border: none;
+  font-size: 15px;
+  color: #6d6259;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.ruleta-close-btn:hover {
+  background: rgba(33, 25, 20, 0.16);
+  color: var(--ink);
+  transform: scale(1.08);
+}
+
+.ruleta-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffebe6;
+  border: 1px solid #ffb8a8;
+  color: var(--terra);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+}
+
+.ruleta-alarm-icon {
+  font-size: 13px;
+  animation: ruletaPulse 1.2s infinite;
+}
+
+@keyframes ruletaPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+}
+
+.ruleta-headline {
+  font-size: clamp(1.75rem, 4vw, 2.35rem);
+  line-height: 1.1;
+  margin: 0 0 10px;
+  color: var(--ink);
+}
+
+.ruleta-headline em {
+  color: var(--forest);
+  font-style: italic;
+}
+
+.ruleta-subheadline {
+  font-size: 13.5px;
+  color: #635850;
+  line-height: 1.5;
+  margin: 0 0 20px;
+  padding: 0 10px;
+}
+
+.ruleta-wheel-wrapper {
+  position: relative;
+  width: 290px;
+  height: 290px;
+  margin: 0 auto 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ruleta-pointer {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.35));
+  transition: transform 0.1s ease;
+}
+
+.ruleta-pointer.bounce {
+  transform: translateX(-50%) rotate(-8deg) scale(1.05);
+}
+
+.ruleta-canvas-container {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  box-shadow: 0 12px 32px rgba(20, 15, 12, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.ruleta-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.ruleta-center-spin-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffd54f, #d48b14);
+  border: 3px solid #211914;
+  color: #211914;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 2px 4px rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+}
+
+.ruleta-center-spin-btn:hover:not(:disabled) {
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+.ruleta-cta-spin-btn {
+  width: 100%;
+  font-size: 13.5px;
+  padding: 16px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  background: linear-gradient(135deg, #da6242, #c14d2e);
+  letter-spacing: 0.12em;
+}
+
+.ruleta-cta-spin-btn.pulse-glow {
+  animation: ruletaGlowBtn 2s infinite ease-in-out;
+}
+
+@keyframes ruletaGlowBtn {
+  0%, 100% { box-shadow: 0 8px 24px rgba(218, 98, 66, 0.4); transform: translateY(0); }
+  50% { box-shadow: 0 12px 34px rgba(218, 98, 66, 0.65); transform: translateY(-2px); }
+}
+
+.ruleta-cta-spin-btn.spinning {
+  background: #7a6e65;
+  cursor: wait;
+  box-shadow: none;
+}
+
+.ruleta-guarantee-note {
+  font-size: 11px;
+  color: #7b7067;
+  margin: 12px 0 0;
+}
+
+/* ==========================================================================
+   WINNER STATE STYLES
+   ========================================================================== */
+
+.ruleta-step-win {
+  animation: ruletaFadeIn 0.4s ease;
+}
+
+.ruleta-win-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #e8f5e9;
+  border: 1px solid #a5d6a7;
+  color: var(--forest);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+}
+
+.ruleta-win-title {
+  font-size: clamp(1.8rem, 4.2vw, 2.4rem);
+  line-height: 1.08;
+  margin: 0 0 8px;
+  color: var(--ink);
+}
+
+.ruleta-win-title em {
+  color: var(--terra);
+  font-style: italic;
+}
+
+.ruleta-win-subtitle {
+  font-size: 13px;
+  color: #5c5249;
+  line-height: 1.5;
+  margin: 0 0 18px;
+}
+
+.ruleta-prize-card {
+  background: #f7f3eb;
+  border: 1px solid #e2dacd;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: left;
+  margin-bottom: 16px;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.ruleta-prize-top {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  border-bottom: 1px solid #e8e0d4;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+}
+
+.ruleta-prize-thumb {
+  flex-shrink: 0;
+  width: 72px;
+  height: 90px;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.ruleta-prize-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ruleta-prize-info {
+  flex: 1;
+}
+
+.ruleta-prize-tag {
+  display: inline-block;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--terra);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.ruleta-prize-name {
+  font-size: 17px;
+  line-height: 1.2;
+  margin: 0 0 8px;
+  font-family: var(--font-fraunces), serif;
+}
+
+.ruleta-prize-included {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  color: #504840;
+}
+
+.ruleta-price-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ruleta-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+  color: #6a5e55;
+}
+
+.ruleta-price-row del {
+  color: #8c8076;
+}
+
+.ruleta-discount-highlight {
+  background: #fff0eb;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px dashed #e88d76;
+  color: var(--terra);
+  font-weight: 600;
+}
+
+.ruleta-discount-tag {
+  color: var(--terra);
+  font-size: 13px;
+}
+
+.ruleta-price-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 2px solid #e0d6c7;
+  padding-top: 10px;
+  margin-top: 4px;
+}
+
+.ruleta-total-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.ruleta-price-total small {
+  display: block;
+  font-size: 10px;
+  color: #796e65;
+}
+
+.ruleta-final-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  color: var(--forest);
+}
+
+.ruleta-currency {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.ruleta-final-amount strong {
+  font-family: var(--font-fraunces), "Fraunces", serif;
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.ruleta-cop {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin-left: 2px;
+}
+
+.ruleta-timer-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  padding: 8px 16px;
+  border-radius: 30px;
+  margin-bottom: 16px;
+  font-size: 12.5px;
+  color: #785a08;
+}
+
+.ruleta-timer-box p {
+  margin: 0;
+}
+
+.ruleta-countdown {
+  color: #b71c1c;
+  font-weight: 700;
+  font-family: monospace;
+  font-size: 14px;
+}
+
+.ruleta-checkout-cta-btn {
+  width: 100%;
+  padding: 16px 20px;
+  font-size: 14px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #145d3d, #0d422a);
+  box-shadow: 0 10px 28px rgba(20, 93, 61, 0.45);
+  animation: ruletaWinPulse 1.8s infinite ease-in-out;
+  margin-bottom: 12px;
+  text-align: center;
+  border: none;
+  cursor: pointer;
+}
+
+@keyframes ruletaWinPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 10px 28px rgba(20, 93, 61, 0.45); }
+  50% { transform: scale(1.02); box-shadow: 0 14px 34px rgba(20, 93, 61, 0.65); }
+}
+
+.ruleta-trust-row {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  font-size: 10px;
+  color: #776c63;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 14px;
+}
+
+.ruleta-dismiss-link {
+  background: none;
+  border: none;
+  color: #92877e;
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.ruleta-dismiss-link:hover {
+  color: #5c5249;
+}
+
+/* ==========================================================================
+   CHECKOUT DISCOUNT ACTIVE BANNER
+   ========================================================================== */
+
+.checkout-discount-applied-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(135deg, #fff7e6, #fef2d2);
+  border: 2px solid #f1c40f;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin: 16px 0 20px;
+  box-shadow: 0 6px 18px rgba(241, 196, 15, 0.2);
+  animation: discountBannerPop 0.4s ease;
+}
+
+@keyframes discountBannerPop {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.discount-applied-icon {
+  font-size: 26px;
+  flex-shrink: 0;
+}
+
+.discount-applied-content {
+  flex: 1;
+}
+
+.discount-applied-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.discount-applied-title strong {
+  font-size: 14px;
+  color: #835200;
+}
+
+.discount-badge-active {
+  background: #c15542;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.discount-applied-content p {
+  margin: 0;
+  font-size: 12.5px;
+  color: #634710;
+  line-height: 1.4;
+}
+
+.checkout-loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  font-size: 16px;
+  color: #71675f;
+}
+
+@media (max-width: 520px) {
+  .ruleta-modal-card {
+    padding: 24px 18px;
+  }
+  .ruleta-wheel-wrapper {
+    width: 250px;
+    height: 250px;
+  }
+  .ruleta-headline {
+    font-size: 1.6rem;
+  }
+  .ruleta-prize-top {
+    flex-direction: column;
+    text-align: center;
+  }
+  .ruleta-prize-thumb {
+    width: 60px;
+    height: 75px;
+  }
+  .ruleta-trust-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+

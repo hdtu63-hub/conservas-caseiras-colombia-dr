@@ -8,6 +8,8 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const file = formData.get("receipt") as File | null;
     const edition = (formData.get("edition") as string) || "desconocida";
+    const amount = (formData.get("amount") as string) || "";
+    const discount = (formData.get("discount") as string) || "";
 
     if (!file) {
       return NextResponse.json({ error: "No se proporcionó archivo" }, { status: 400 });
@@ -90,8 +92,11 @@ export async function POST(req: NextRequest) {
         const result = JSON.parse(jsonMatch[0]);
 
         if (result.es_comprobante === true) {
-          const montoStr = result.monto ? String(result.monto) : (edition === "esencial" ? "20000" : "28000");
-          await trackEvent("payment_approved", { edition, monto: montoStr });
+          const fallbackMonto = amount || (edition.includes("75off") || discount === "75" ? "14000" : (edition === "esencial" ? "20000" : "28000"));
+          const montoStr = result.monto ? String(result.monto) : fallbackMonto;
+          const meta: Record<string, string> = { edition, monto: montoStr };
+          if (discount) meta.discount = discount;
+          await trackEvent("payment_approved", meta);
           
           return NextResponse.json({
             approved: true,

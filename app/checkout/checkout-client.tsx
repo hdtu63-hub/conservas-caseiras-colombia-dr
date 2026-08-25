@@ -1,6 +1,6 @@
 "use client";
-import { useState, useRef, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useRef, useEffect, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 
 interface CheckoutProps {
@@ -15,7 +15,7 @@ interface CheckoutProps {
   bonuses?: string[];
 }
 
-export default function CheckoutClient({
+function CheckoutClientInternal({
   edition,
   title,
   price,
@@ -27,6 +27,15 @@ export default function CheckoutClient({
   bonuses = [],
 }: CheckoutProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Detectar cupón de 75% OFF de la ruleta
+  const isDiscounted = edition === "completa" && (searchParams.get("descuento") === "75" || searchParams.get("promo") === "75");
+  const activePrice = isDiscounted ? "$14.000" : price;
+  const activeOriginalPrice = isDiscounted ? "$167.000" : originalPrice;
+  const activeSavings = isDiscounted ? "$153.000" : savings;
+  const numericAmount = isDiscounted ? 14000 : (edition === "esencial" ? 20000 : 28000);
+
   const [activeTab, setActiveTab] = useState<"nequi" | "breb">("nequi");
   const [copied, setCopied] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -62,9 +71,9 @@ export default function CheckoutClient({
     fetch("/api/track", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: `checkout_view_${edition}` }),
+      body: JSON.stringify({ type: `checkout_view_${edition}${isDiscounted ? "_75off" : ""}` }),
     }).catch(() => {});
-  }, [edition]);
+  }, [edition, isDiscounted]);
 
   const copyToClipboard = useCallback(async (text: string, label: string) => {
     try {
@@ -104,7 +113,9 @@ export default function CheckoutClient({
 
     const formData = new FormData();
     formData.append("receipt", file);
-    formData.append("edition", edition);
+    formData.append("edition", isDiscounted ? "completa_75off" : edition);
+    formData.append("amount", String(numericAmount));
+    if (isDiscounted) formData.append("discount", "75");
 
     await new Promise((r) => setTimeout(r, 700));
     setStatus("verifying");
@@ -127,7 +138,7 @@ export default function CheckoutClient({
           (window as any).fbq("track", "Purchase", {
             content_name: title,
             currency: "COP",
-            value: edition === "esencial" ? 20000 : 28000,
+            value: numericAmount,
             ...utms,
           });
         }
@@ -156,7 +167,7 @@ export default function CheckoutClient({
       await fetch("/api/send-access", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, edition }),
+        body: JSON.stringify({ email, edition, discount: isDiscounted ? "75" : undefined }),
       });
     } catch {
       // Continua normalmente para a confirmação
@@ -172,8 +183,9 @@ export default function CheckoutClient({
 
     const formData = new FormData();
     formData.append("email", email);
-    formData.append("edition", edition);
+    formData.append("edition", isDiscounted ? "completa_75off" : edition);
     formData.append("receipt", file);
+    if (isDiscounted) formData.append("discount", "75");
 
     try {
       // Envia email pro admin com o comprovante em anexo
@@ -188,7 +200,7 @@ export default function CheckoutClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: "payment_manual_review",
-          metadata: { email, edition },
+          metadata: { email, edition, isDiscounted: String(isDiscounted), price: activePrice },
         }),
       });
     } catch {
@@ -221,6 +233,22 @@ export default function CheckoutClient({
               className="checkout-top-banner-img"
               sizes="(max-width: 768px) 100vw, 1160px"
             />
+          </div>
+        )}
+
+        {/* Banner de Descuento Activado de la Ruleta */}
+        {isDiscounted && (
+          <div className="checkout-discount-applied-banner">
+            <div className="discount-applied-icon">🎉</div>
+            <div className="discount-applied-content">
+              <div className="discount-applied-title">
+                <strong>¡Cupón de 75% de Descuento de la Ruleta Aplicado!</strong>
+                <span className="discount-badge-active">75% OFF ACTIVADO</span>
+              </div>
+              <p>
+                Has desbloqueado el precio especial de liquidación. Tu <strong>Colección Completa + 4 Bonos</strong> queda en solo <strong>$14.000 COP</strong> (Ahorras $153.000 COP hoy).
+              </p>
+            </div>
           </div>
         )}
 
@@ -348,7 +376,7 @@ export default function CheckoutClient({
                         Entra en <strong>Envía</strong> y selecciona <strong>A Nequi</strong>.
                       </li>
                       <li>
-                        Pega el número <strong>3022913251</strong> e ingresa el monto exacto: <strong>{price} COP</strong>.
+                        Pega el número <strong>3022913251</strong> e ingresa el monto exacto: <strong>{activePrice} COP</strong>.
                       </li>
                       <li>
                         Toma una captura de pantalla (o guarda en PDF) de tu comprobante exitoso.
@@ -401,7 +429,7 @@ export default function CheckoutClient({
                         Selecciona transferir a <strong>Llave Bre-B</strong> o <strong>Transfiya</strong>.
                       </li>
                       <li>
-                        Pega la llave <strong>@NEQUIJUA555917</strong> e ingresa el monto: <strong>{price} COP</strong>.
+                        Pega la llave <strong>@NEQUIJUA555917</strong> e ingresa el monto: <strong>{activePrice} COP</strong>.
                       </li>
                       <li>
                         Guarda tu captura o comprobante de la transferencia realizada.
@@ -644,11 +672,11 @@ export default function CheckoutClient({
               <div className="price-breakdown-box">
                 <div className="breakdown-row">
                   <span>Precio habitual:</span>
-                  <del className="old-price-line">{originalPrice} COP</del>
+                  <del className="old-price-line">{activeOriginalPrice} COP</del>
                 </div>
                 <div className="breakdown-row discount-row">
                   <span>Descuento aplicado hoy:</span>
-                  <span className="discount-badge">- {savings}</span>
+                  <span className="discount-badge">- {activeSavings} {isDiscounted && "(75% OFF)"}</span>
                 </div>
                 <div className="breakdown-row total-row">
                   <div>
@@ -656,7 +684,7 @@ export default function CheckoutClient({
                     <small className="single-pay-note">Pago único · Sin cobros mensuales</small>
                   </div>
                   <div className="total-amount-display">
-                    <strong>{price}</strong>
+                    <strong>{activePrice}</strong>
                     <small>COP</small>
                   </div>
                 </div>
@@ -772,4 +800,10 @@ export default function CheckoutClient({
   );
 }
 
-
+export default function CheckoutClient(props: CheckoutProps) {
+  return (
+    <Suspense fallback={<div className="checkout-loading-state"><p>Cargando checkout seguro...</p></div>}>
+      <CheckoutClientInternal {...props} />
+    </Suspense>
+  );
+}
