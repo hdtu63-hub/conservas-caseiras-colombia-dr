@@ -18,8 +18,8 @@ const SLICES: Slice[] = [
   { text: "BONO EXTRA", subtext: "1 Guía Gratis", bgColor: "#e5ae52", textColor: "#211914" },
   { text: "50% OFF", bgColor: "#9a4b2f", textColor: "#ffffff" },
   { text: "20% OFF", bgColor: "#211914", textColor: "#f4f0e7" },
-  { text: "CASI GANAS", bgColor: "#145d3d", textColor: "#ffffff" },
-  { text: "40% OFF", bgColor: "#c7832e", textColor: "#211914" },
+  { text: "CASI GANAS", subtext: "¡Intenta!", bgColor: "#145d3d", textColor: "#ffffff" },
+  { text: "5% DESCUENTO", subtext: "Por poco...", bgColor: "#38291f", textColor: "#ffe082" },
 ];
 
 export default function RuletaModal() {
@@ -35,6 +35,7 @@ export default function RuletaModal() {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const isNavigatingInternally = useRef(false);
   const hasTriggeredRef = useRef(false);
+  const animFrameRef = useRef<number | null>(null);
 
   // Inicializar Web Audio API bajo demanda
   const getAudioContext = useCallback(() => {
@@ -50,7 +51,7 @@ export default function RuletaModal() {
     return audioCtxRef.current;
   }, []);
 
-  // Sonido de "click / tick" durante el giro
+  // Sonido de "click / tick" al pasar cada división
   const playTickSound = useCallback(() => {
     try {
       const ctx = getAudioContext();
@@ -58,13 +59,13 @@ export default function RuletaModal() {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "triangle";
-      osc.frequency.setValueAtTime(580 + Math.random() * 60, ctx.currentTime);
-      gain.gain.setValueAtTime(0.08, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+      osc.frequency.setValueAtTime(620 + Math.random() * 80, ctx.currentTime);
+      gain.gain.setValueAtTime(0.09, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.035);
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start();
-      osc.stop(ctx.currentTime + 0.04);
+      osc.stop(ctx.currentTime + 0.035);
     } catch {
       // Ignorar errores de audio
     }
@@ -157,7 +158,12 @@ export default function RuletaModal() {
         }
       } else {
         ctx.font = "600 12px 'DM Sans', sans-serif";
-        ctx.fillText(slice.text, radius - 20, 4);
+        ctx.fillText(slice.text, radius - 18, 2);
+        if (slice.subtext) {
+          ctx.font = "bold 8.5px 'DM Sans', sans-serif";
+          ctx.fillStyle = slice.textColor === "#ffffff" ? "rgba(255,255,255,0.75)" : "rgba(33,25,20,0.75)";
+          ctx.fillText(slice.subtext, radius - 18, 13);
+        }
       }
       ctx.restore();
     });
@@ -280,7 +286,6 @@ export default function RuletaModal() {
         const url = new URL(target.href, window.location.href);
         if (url.pathname.startsWith("/checkout") || target.href.includes("#")) {
           isNavigatingInternally.current = true;
-          // Permitir navegación legítima sin bloquear
         }
       }
     };
@@ -291,16 +296,13 @@ export default function RuletaModal() {
       if (window.history && window.history.pushState) {
         window.history.pushState({ page: "conservas_home_active" }, "", window.location.href);
       }
-    } catch {
-      // Ignorar errores en navegadores restringidos
-    }
+    } catch {}
 
     const handlePopState = () => {
       if (isNavigatingInternally.current) return;
       if (!hasTriggeredRef.current) {
         hasTriggeredRef.current = true;
         setIsOpen(true);
-        // Empujar nuevamente el estado para retener la página
         try {
           window.history.pushState({ page: "conservas_home_active" }, "", window.location.href);
         } catch {}
@@ -324,38 +326,58 @@ export default function RuletaModal() {
       document.removeEventListener("click", handleLinkClick, true);
       window.removeEventListener("popstate", handlePopState);
       document.removeEventListener("mouseleave", handleMouseLeave);
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
   }, []);
 
-  // Función para girar la ruleta
+  // Función para girar la ruleta con física y suspenso
   const handleSpin = () => {
     if (isSpinning || hasWon) return;
     setIsSpinning(true);
     getAudioContext();
 
-    // 6 vueltas completas (2160 deg) + 0 deg = aterriza exactamente en el slice 0 (75% DESCUENTO)
-    const targetDegrees = 360 * 6; // Slice 0 está centrado en 0deg
+    // 7 vueltas completas (2520 deg) = la aguja pasa por todos los descuentos,
+    // se desacelera fuertemente en 5% DESCUENTO (Slice 7) y al final se desliza y frena en 75% DESCUENTO (Slice 0)
+    const targetDegrees = 360 * 7;
     setRotation(targetDegrees);
 
-    // Intervalo de sonido de ticks mientras gira
-    let tickCount = 0;
-    const totalTicks = 28;
-    const tickInterval = setInterval(() => {
-      playTickSound();
-      setPointerBounce((b) => !b);
-      tickCount++;
-      if (tickCount >= totalTicks) {
-        clearInterval(tickInterval);
-      }
-    }, 150);
+    const spinDuration = 5500; // 5.5 segundos de pura emoción
+    const startTime = performance.now();
+    let lastPinIndex = -1;
 
-    // Al finalizar el giro (4.5 segundos)
+    // Seguimiento en tiempo real de los "ticks" y rebote de la aguja sincronizado con la rotación
+    const trackTicks = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / spinDuration);
+
+      // Aproximación del cubic-bezier(0.1, 0.9, 0.15, 1) para calcular el ángulo instantáneo
+      const easeProgress = 1 - Math.pow(1 - progress, 4.4);
+      const currentDegrees = easeProgress * targetDegrees;
+
+      // Cada 45 grados pasa un pin/división
+      const currentPin = Math.floor((currentDegrees + 22.5) / 45);
+
+      if (currentPin !== lastPinIndex) {
+        lastPinIndex = currentPin;
+        playTickSound();
+        setPointerBounce(true);
+        setTimeout(() => setPointerBounce(false), 50);
+      }
+
+      if (progress < 1) {
+        animFrameRef.current = requestAnimationFrame(trackTicks);
+      }
+    };
+
+    animFrameRef.current = requestAnimationFrame(trackTicks);
+
+    // Al finalizar el giro completo
     setTimeout(() => {
       setIsSpinning(false);
       setHasWon(true);
       playWinSound();
       fireConfetti();
-    }, 4500);
+    }, spinDuration + 100);
   };
 
   const handleClose = () => {
@@ -416,12 +438,12 @@ export default function RuletaModal() {
                 </svg>
               </div>
 
-              {/* Canvas de la Ruleta con rotación CSS */}
+              {/* Canvas de la Ruleta con rotación CSS y curva de suspenso */}
               <div
                 className="ruleta-canvas-container"
                 style={{
                   transform: `rotate(${rotation}deg)`,
-                  transition: isSpinning ? "transform 4.5s cubic-bezier(0.12, 0.8, 0.2, 1)" : "none",
+                  transition: isSpinning ? "transform 5.5s cubic-bezier(0.1, 0.9, 0.15, 1)" : "none",
                 }}
               >
                 <canvas ref={canvasRef} className="ruleta-canvas" />
