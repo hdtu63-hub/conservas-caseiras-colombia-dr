@@ -414,17 +414,6 @@ export default function CheckoutClient({
                 </div>
               )}
 
-              {/* Receipt Visual Guidance Box */}
-              <div className="receipt-tip-card">
-                <div className="receipt-tip-icon">💡</div>
-                <div className="receipt-tip-text">
-                  <strong>Recomendación para validación inmediata:</strong>
-                  <p>
-                    Asegúrate de que en la foto de tu comprobante se vea claramente el <strong>monto ({price} COP)</strong>, la <strong>fecha</strong> y el <strong>número de comprobante / referencia</strong>.
-                  </p>
-                </div>
-              </div>
-
               {/* Upload Section */}
               <div className="upload-section-wrapper">
                 <div className="upload-section-header">
