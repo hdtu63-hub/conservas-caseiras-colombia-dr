@@ -71,8 +71,8 @@ function HeroMedia() {
     <img 
       src="/images/especialista-conservas.webp" 
       alt="Especialista en conservas caseras junto a frascos y su guía de recetas" 
-      width="480" 
-      height="640" 
+      width="600" 
+      height="450" 
       fetchPriority="high"
       loading="eager"
       decoding="async"
@@ -104,7 +104,7 @@ export default function Home() {
     <section className="benefits paper section"><div className="container"><h2>Todo lo que necesitas para pasar de cero a tu primer frasco <em>listo para disfrutar o vender.</em></h2><div className="benefit-grid">{benefits.map(([title, text], i) => <article key={title}><span>{String(i + 1).padStart(2, "0")}</span><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>
 
     <section className="dark-section section paper"><div className="container split">
-      <div className="feature-image story-image"><div/><Image src="/images/preserves-collage.webp" alt="Selección de conservas artesanales en frascos de vidrio" width={600} height={750} sizes="(max-width: 900px) 100vw, 50vw" /></div>
+      <div className="feature-image story-image"><div/><Image src="/images/preserves-collage.webp" alt="Selección de conservas artesanales en frascos de vidrio" width={600} height={600} sizes="(max-width: 900px) 100vw, 50vw" /></div>
       <div><p className="eyebrow warm">Una habilidad que puede valer mucho más de lo que cuesta</p><h2>Transforma ingredientes simples en <em>productos con valor.</em></h2><p className="intro">Unos vegetales, un frasco y la preparación correcta pueden convertirse en una conserva artesanal que luce especial, sabe increíble y está lista para disfrutar, regalar o vender.</p><ul className="editorial-list">{["Convierte ingredientes cotidianos en conservas con apariencia artesanal", "Crea sabores y combinaciones que no encuentras fácilmente en el supermercado", "Prepara frascos bonitos para servir, regalar o vender", "Amplía tu variedad con más de 100 recetas diferentes", "Aprende a calcular cuánto te cuesta producir cada frasco", "Ponle precio a tus conservas y conviértelas en una opción de ingreso"].map((item, i) => <li key={item}><span>{String(i + 1).padStart(2, "0")}</span>{item}</li>)}</ul><ArrowButton href="#ofertas" light>Quiero preparar mis conservas</ArrowButton></div>
     </div></section>
 
