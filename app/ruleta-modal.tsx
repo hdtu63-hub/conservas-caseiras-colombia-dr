@@ -231,6 +231,7 @@ export default function RuletaModal({ disabled = false }: RuletaModalProps) {
     const handlePopState = () => {
       if (isNavigatingInternally.current) {
         isNavigatingInternally.current = false;
+        return;
       }
       hasTriggeredRef.current = true;
       setIsOpen(true);
@@ -242,6 +243,7 @@ export default function RuletaModal({ disabled = false }: RuletaModalProps) {
     window.addEventListener("popstate", handlePopState);
 
     const handleMouseLeave = (e: MouseEvent) => {
+      if (isNavigatingInternally.current) return;
       if (e.clientY <= 8) {
         hasTriggeredRef.current = true;
         setIsOpen(true);
