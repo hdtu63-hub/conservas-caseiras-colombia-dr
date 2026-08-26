@@ -889,7 +889,15 @@ export default function RuletaModal({ disabled = false }: RuletaModalProps) {
               onClick={() => {
                 try { sessionStorage.setItem("conservas_promo_8k", "true"); } catch {}
                 setIsOpen(false);
-                window.location.replace("/checkout/completa?descuento=8k");
+                const params = new URLSearchParams(window.location.search);
+                params.set("descuento", "8k");
+                try {
+                  const stored = JSON.parse(window.localStorage.getItem("conservas_utm_params") || "{}");
+                  for (const [k, v] of Object.entries(stored)) {
+                    if (v && !params.has(k)) params.set(k, String(v));
+                  }
+                } catch {}
+                window.location.replace(`/checkout/completa?${params.toString()}`);
               }}
               className="button ruleta-checkout-cta-btn btn-8k"
             >

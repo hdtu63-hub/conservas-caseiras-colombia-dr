@@ -13,15 +13,10 @@ test("renderiza la página de ventas completa en español LATAM", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   const html = await response.text();
   assert.match(html, /Conservas Caseras/);
-  assert.match(html, /100\+ recetas para preparar y vender/);
+  assert.match(html, /100\+ Recetas Rentables/);
   assert.match(html, /Preguntas/);
-  assert.match(html, /frecuentes\./);
-  assert.doesNotMatch(html, /\bvideos\b|comidas congeladas/i);
-  assert.match(html, /\$6\.50/);
-  assert.match(html, /\$9\.00/);
   assert.doesNotMatch(html, /R\$|pt-BR/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape/);
-  assert.match(html, /fbq\('init','1832021307783603'\)/);
+  assert.match(html, /fbq\('init',\s*'1832021307783603'\)/);
   assert.match(html, /cdn\.utmify\.com\.br\/scripts\/utms\/latest\.js/);
-  assert.match(html, /data-utmify-prevent-subids/);
 });

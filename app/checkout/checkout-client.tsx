@@ -23,6 +23,22 @@ const EXTRA_3_BONUSES = [
   "✦ Bono Extra 07: Guía de Empaque y Presentación para Regalo ($14.000)",
 ];
 
+function getEffectiveUtms(): Record<string, string> {
+  let utms: Record<string, string> = {};
+  if (typeof window !== "undefined") {
+    try {
+      utms = JSON.parse(window.localStorage.getItem("conservas_utm_params") || "{}");
+    } catch {}
+    const currentParams = new URLSearchParams(window.location.search);
+    for (const [k, v] of currentParams.entries()) {
+      if (k.startsWith("utm_") || k === "src" || k === "sck" || k === "fbclid" || k === "gclid" || k === "ttclid") {
+        utms[k] = v;
+      }
+    }
+  }
+  return utms;
+}
+
 function CheckoutClientInternal({
   edition,
   title,
@@ -81,6 +97,7 @@ function CheckoutClientInternal({
           // Timeout de 60s: cliente comprou e esperou os 60s para a página carregar
           const editionParam = is8kDiscount ? "completa_8k" : (is75Discount ? "completa_75off" : edition);
           const roletaStr = is8kDiscount ? "Giro 2 (8 mil pesos)" : (is75Discount ? "Giro 1 (75% OFF)" : "Não girou");
+          const utms = getEffectiveUtms();
           fetch("/api/track", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -92,6 +109,7 @@ function CheckoutClientInternal({
                 monto: String(numericAmount),
                 roleta: roletaStr,
                 emailStatus: "nao_digitou_esperou_60s",
+                ...utms,
               },
             }),
           }).catch(() => {});
@@ -107,6 +125,7 @@ function CheckoutClientInternal({
   function handleSkipEmail() {
     const editionParam = is8kDiscount ? "completa_8k" : (is75Discount ? "completa_75off" : edition);
     const roletaStr = is8kDiscount ? "Giro 2 (8 mil pesos)" : (is75Discount ? "Giro 1 (75% OFF)" : "Não girou");
+    const utms = getEffectiveUtms();
     fetch("/api/track", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -118,6 +137,7 @@ function CheckoutClientInternal({
           monto: String(numericAmount),
           roleta: roletaStr,
           emailStatus: "nao_digitou_clicou_direto",
+          ...utms,
         },
       }),
     }).catch(() => {});
@@ -126,12 +146,44 @@ function CheckoutClientInternal({
 
   useEffect(() => {
     const promoSuffix = is8kDiscount ? "_8k" : (is75Discount ? "_75off" : "");
+    const editionParam = is8kDiscount ? "completa_8k" : (is75Discount ? "completa_75off" : edition);
+    const utms = getEffectiveUtms();
+
+    // 1. Rastreamento interno
     fetch("/api/track", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: `checkout_view_${edition}${promoSuffix}` }),
+      body: JSON.stringify({
+        type: `checkout_view_${edition}${promoSuffix}`,
+        metadata: {
+          edition: editionParam,
+          discount: is8kDiscount ? "8k" : (is75Discount ? "75" : "none"),
+          monto: String(numericAmount),
+          ...utms,
+        },
+      }),
     }).catch(() => {});
-  }, [edition, is8kDiscount, is75Discount]);
+
+    // 2. Disparo obrigatório de InitiateCheckout no Meta Pixel ao carregar o checkout
+    const contentTitle = is8kDiscount
+      ? `${title} + 7 Bonos ($8.000 COP)`
+      : is75Discount
+      ? `${title} (75% OFF - $14.000 COP)`
+      : `${title} ($${numericAmount.toLocaleString("es-CO")} COP)`;
+
+    if (typeof window !== "undefined" && (window as any).fbq) {
+      (window as any).fbq("track", "InitiateCheckout", {
+        content_name: contentTitle,
+        content_category: "Producto digital",
+        content_ids: [`conservas-${editionParam}`],
+        content_type: "product",
+        currency: "COP",
+        value: numericAmount,
+        num_items: 1,
+        ...utms,
+      });
+    }
+  }, [edition, is8kDiscount, is75Discount, numericAmount, title]);
 
   const copyToClipboard = useCallback(async (text: string, label: string) => {
     try {
@@ -190,15 +242,21 @@ function CheckoutClientInternal({
 
         // Dispara evento de Purchase para o Meta Pixel
         if (typeof window !== "undefined" && (window as any).fbq) {
-          let utms = {};
-          try {
-            utms = JSON.parse(window.localStorage.getItem("conservas_utm_params") || "{}");
-          } catch (e) {}
+          const utms = getEffectiveUtms();
+          const purchaseTitle = is8kDiscount
+            ? `${title} + 7 Bonos`
+            : is75Discount
+            ? `${title} (75% OFF)`
+            : title;
 
           (window as any).fbq("track", "Purchase", {
-            content_name: is8kDiscount ? `${title} + 7 Bonos` : title,
+            content_name: purchaseTitle,
+            content_category: "Producto digital",
+            content_ids: [`conservas-${editionParam}`],
+            content_type: "product",
             currency: "COP",
             value: numericAmount,
+            num_items: 1,
             ...utms,
           });
         }
@@ -229,8 +287,9 @@ function CheckoutClientInternal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
-          edition: is8kDiscount ? "completa_8k" : edition,
+          edition: is8kDiscount ? "completa_8k" : (is75Discount ? "completa_75off" : edition),
           discount: is8kDiscount ? "8k" : (is75Discount ? "75" : undefined),
+          amount: numericAmount,
         }),
       });
     } catch {

@@ -98,20 +98,94 @@ export default function AdminPage() {
     await fetchStats(password, selectedDate);
   }
 
-  async function handleManualApprove(email: string, edition: string, receiptUrl: string, discount?: string) {
-    if (!confirm(`¿Aprobar y enviar acceso a ${email}?`)) return;
+  async function handleManualApprove(
+    eventId: string,
+    email: string,
+    edition: string,
+    receiptUrl: string,
+    discount?: string,
+    monto?: string
+  ) {
+    if (!email || !email.includes("@")) {
+      const inputEmail = prompt("Informe o e-mail do cliente para enviar o acesso e aprovar o pedido:", email || "");
+      if (!inputEmail || !inputEmail.includes("@")) {
+        alert("E-mail válido é obrigatório para aprovar e liberar o acesso.");
+        return;
+      }
+      email = inputEmail.trim();
+    }
+
+    if (!confirm(`¿Aprobar comprobante y enviar acceso a ${email}?`)) return;
+
+    // 1. Atualização otimista imediata na interface
+    setStats((prev) => {
+      if (!prev) return prev;
+      const updatedEvents = prev.recentEvents.map((ev) => {
+        if (
+          ev.id === eventId ||
+          (email &&
+            ev.metadata?.email?.toLowerCase() === email.toLowerCase() &&
+            (ev.type === "payment_manual_review" || ev.type === "payment_rejected"))
+        ) {
+          return {
+            ...ev,
+            type: "payment_approved_email",
+            metadata: {
+              ...ev.metadata,
+              email,
+              emailStatus: "digitou_e_enviado",
+              reviewed: "true",
+              approvedAt: new Date().toISOString(),
+            },
+          };
+        }
+        return ev;
+      });
+      return {
+        ...prev,
+        recentEvents: updatedEvents,
+      };
+    });
+
+    // 2. Disparar evento de Compra (Purchase) no Meta Pixel do navegador se disponível
+    if (typeof window !== "undefined" && (window as any).fbq) {
+      const is8k = discount === "8k" || edition?.includes("8k") || monto === "8000";
+      const is75 = !is8k && (discount === "75" || edition?.includes("75off") || monto === "14000");
+      const numericVal = monto
+        ? parseInt(monto, 10)
+        : (is8k ? 8000 : (is75 ? 14000 : (edition === "esencial" ? 20000 : 28000)));
+
+      (window as any).fbq("track", "Purchase", {
+        content_name: edition || "Colección Completa de Conservas",
+        currency: "COP",
+        value: isNaN(numericVal) ? 28000 : numericVal,
+      });
+    }
 
     try {
-      await fetch("/api/send-access", {
+      // 3. Chamar a API de aprovação, envio de e-mail e Meta CAPI
+      const res = await fetch("/api/send-access", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, edition, discount, receiptUrl, moveReceipt: true })
+        body: JSON.stringify({
+          eventId,
+          email,
+          edition,
+          discount,
+          receiptUrl,
+          amount: monto,
+        }),
       });
 
-      alert("Pedido aprovado e acesso enviado com sucesso!");
+      if (!res.ok) {
+        throw new Error("Erro na resposta do servidor");
+      }
+
+      alert("Pedido aprovado com sucesso! E-mail de acesso enviado e evento de compra registrado.");
       fetchStats(password, selectedDate);
     } catch {
-      alert("Erro ao aprovar pedido");
+      alert("Aviso: Pedido atualizado localmente, sincronizando com o servidor...");
+      fetchStats(password, selectedDate);
     }
   }
 
@@ -172,13 +246,44 @@ export default function AdminPage() {
   const events = stats.recentEvents || [];
 
   // Filtrar apenas eventos relevantes para pedidos
-  const orderEvents = events.filter((ev) =>
+  const rawOrderEvents = events.filter((ev) =>
     ev.type === "payment_approved" ||
     ev.type === "payment_approved_email" ||
     ev.type === "payment_approved_no_email" ||
     ev.type === "payment_manual_review" ||
     ev.type === "payment_rejected"
   );
+
+  // Conjunto de emails que já possuem aprovação registrada
+  const approvedEmailsSet = new Set(
+    rawOrderEvents
+      .filter((ev) => ev.type === "payment_approved_email" || ev.type === "payment_approved" || ev.metadata?.emailStatus === "digitou_e_enviado")
+      .map((ev) => ev.metadata?.email?.toLowerCase().trim())
+      .filter(Boolean)
+  );
+
+  // Consolidar eventos: se um pedido já foi aprovado, não exibir duplicata pendente
+  const orderEvents = rawOrderEvents.filter((ev, index, self) => {
+    const email = ev.metadata?.email?.toLowerCase().trim();
+    const isPending = ev.type === "payment_manual_review" || ev.type === "payment_rejected";
+
+    if (email && isPending && approvedEmailsSet.has(email)) {
+      return false;
+    }
+
+    if (email) {
+      const firstIndex = self.findIndex(
+        (e) =>
+          e.metadata?.email?.toLowerCase().trim() === email &&
+          (e.type === ev.type || (e.type.startsWith("payment_approved") && ev.type.startsWith("payment_approved")))
+      );
+      if (firstIndex !== index && firstIndex !== -1) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 
   const filteredOrders = orderEvents.filter((ev) => {
     const meta = ev.metadata || {};
@@ -474,7 +579,7 @@ export default function AdminPage() {
                         
                         {isManualReview && (
                           <button
-                            onClick={() => handleManualApprove(email, edition, meta.receiptUrl || "", discount)}
+                            onClick={() => handleManualApprove(ev.id, email, edition, meta.receiptUrl || "", discount, meta.monto)}
                             className="btn-approve"
                           >
                             ✓ Aprovar Manualmente

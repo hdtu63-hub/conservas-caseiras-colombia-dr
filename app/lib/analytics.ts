@@ -64,6 +64,104 @@ export async function trackEvent(type: string, metadata?: Record<string, string>
   return event;
 }
 
+export async function updateEvent(id: string, updates: Partial<TrackEvent>): Promise<TrackEvent | null> {
+  const data = await loadData();
+  const event = data.events.find((e) => e.id === id);
+  if (!event) return null;
+
+  if (updates.type) event.type = updates.type;
+  if (updates.timestamp) event.timestamp = updates.timestamp;
+  if (updates.metadata) {
+    event.metadata = { ...event.metadata, ...updates.metadata };
+  }
+
+  await saveData(data);
+  return event;
+}
+
+export async function approveEvent(params: {
+  eventId?: string;
+  email: string;
+  edition?: string;
+  discount?: string;
+  receiptUrl?: string;
+}): Promise<TrackEvent> {
+  const data = await loadData();
+  const { eventId, email, edition, discount, receiptUrl } = params;
+
+  const is8k = edition?.includes("8k") || discount === "8k" || discount === "8000";
+  const is75 = !is8k && (edition?.includes("75off") || discount === "75");
+  const monto = is8k ? "8000" : (is75 ? "14000" : (edition === "esencial" ? "20000" : "28000"));
+  const roleta = is8k ? "Giro 2 (8 mil pesos)" : (is75 ? "Giro 1 (75% OFF)" : "Não girou");
+
+  // 1. If eventId is provided, try to find that specific event
+  let targetEvent = eventId ? data.events.find((e) => e.id === eventId) : undefined;
+
+  // 2. If not found by eventId, look for a pending review event with the same email
+  if (!targetEvent && email) {
+    targetEvent = data.events
+      .slice()
+      .reverse()
+      .find((e) => (e.type === "payment_manual_review" || e.type === "payment_rejected") && e.metadata?.email?.toLowerCase() === email.toLowerCase());
+  }
+
+  if (targetEvent) {
+    targetEvent.type = "payment_approved_email";
+    targetEvent.metadata = {
+      ...targetEvent.metadata,
+      email,
+      edition: edition || targetEvent.metadata?.edition || "completa",
+      discount: is8k ? "8k" : (is75 ? "75" : (targetEvent.metadata?.discount || "none")),
+      monto: monto || targetEvent.metadata?.monto || "28000",
+      roleta: roleta || targetEvent.metadata?.roleta || "Não girou",
+      emailStatus: "digitou_e_enviado",
+      reviewed: "true",
+      approvedAt: new Date().toISOString(),
+      ...(receiptUrl ? { receiptUrl } : {}),
+    };
+  } else {
+    // Create a new approved event
+    targetEvent = {
+      id: crypto.randomUUID(),
+      type: "payment_approved_email",
+      timestamp: new Date().toISOString(),
+      metadata: {
+        email,
+        edition: edition || "completa",
+        discount: is8k ? "8k" : (is75 ? "75" : "none"),
+        monto,
+        roleta,
+        emailStatus: "digitou_e_enviado",
+        reviewed: "true",
+        approvedAt: new Date().toISOString(),
+        ...(receiptUrl ? { receiptUrl } : {}),
+      },
+    };
+    data.events.push(targetEvent);
+  }
+
+  // Also resolve/clean any other duplicate pending events for this same email so they don't linger
+  if (email) {
+    data.events.forEach((ev) => {
+      if (
+        ev.id !== targetEvent?.id &&
+        (ev.type === "payment_manual_review" || ev.type === "payment_rejected") &&
+        ev.metadata?.email?.toLowerCase() === email.toLowerCase()
+      ) {
+        ev.type = "payment_approved_email";
+        ev.metadata = {
+          ...ev.metadata,
+          emailStatus: "digitou_e_enviado",
+          reviewed: "true",
+        };
+      }
+    });
+  }
+
+  await saveData(data);
+  return targetEvent;
+}
+
 export async function getStats(targetDate?: string) {
   const data = await loadData();
   const events = data.events;
