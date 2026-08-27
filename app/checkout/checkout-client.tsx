@@ -165,23 +165,57 @@ function CheckoutClientInternal({
     }).catch(() => {});
 
     // 2. Disparo obrigatório de InitiateCheckout no Meta Pixel ao carregar o checkout
+    //    Força o carregamento imediato do fbevents.js se ainda não carregou,
+    //    e usa polling para garantir que o evento dispara mesmo com atraso.
     const contentTitle = is8kDiscount
       ? `${title} + 7 Bonos ($8.000 COP)`
       : is75Discount
       ? `${title} (75% OFF - $14.000 COP)`
       : `${title} ($${numericAmount.toLocaleString("es-CO")} COP)`;
 
-    if (typeof window !== "undefined" && (window as any).fbq) {
-      (window as any).fbq("track", "InitiateCheckout", {
-        content_name: contentTitle,
-        content_category: "Producto digital",
-        content_ids: [`conservas-${editionParam}`],
-        content_type: "product",
-        currency: "COP",
-        value: numericAmount,
-        num_items: 1,
-        ...utms,
-      });
+    const icPayload = {
+      content_name: contentTitle,
+      content_category: "Producto digital",
+      content_ids: [`conservas-${editionParam}`],
+      content_type: "product",
+      currency: "COP",
+      value: numericAmount,
+      num_items: 1,
+      ...utms,
+    };
+
+    // Força carregamento imediato do fbevents.js no checkout
+    if (typeof window !== "undefined") {
+      // Carrega o script pesado imediatamente se ainda não foi carregado
+      if (!document.querySelector('script[src*="fbevents.js"]')) {
+        const fbScript = document.createElement("script");
+        fbScript.async = true;
+        fbScript.src = "https://connect.facebook.net/en_US/fbevents.js";
+        document.head.appendChild(fbScript);
+      }
+
+      // Tenta disparar IC imediatamente (funciona se o stub já está pronto)
+      if ((window as any).fbq) {
+        (window as any).fbq("track", "InitiateCheckout", icPayload);
+      }
+
+      // Polling de segurança: garante que o IC dispara após o fbevents.js carregar
+      // e processar a queue. Re-dispara se o pixel real ainda não carregou.
+      let attempts = 0;
+      const maxAttempts = 20; // 20 x 500ms = 10s máximo
+      const interval = setInterval(() => {
+        attempts++;
+        const fbq = (window as any).fbq;
+        if (fbq && fbq.loaded && fbq.version) {
+          // fbevents.js carregou de verdade - dispara IC garantido
+          fbq("track", "InitiateCheckout", icPayload);
+          clearInterval(interval);
+        } else if (attempts >= maxAttempts) {
+          clearInterval(interval);
+        }
+      }, 500);
+
+      return () => clearInterval(interval);
     }
   }, [edition, is8kDiscount, is75Discount, numericAmount, title]);
 
